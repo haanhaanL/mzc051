@@ -260,15 +260,7 @@ with httpx.Client(headers=HEAD, timeout=20) as c:
     save("weekly.csv", get_weekly(c))
 
 # 每次运行都重新生成 combined_06.csv（全量覆盖）
-import os as _os
-print("当前工作目录：", _os.getcwd())
-print("daily.csv 存在：", _os.path.exists("daily.csv"))
-print("weekly.csv 存在：", _os.path.exists("weekly.csv"))
 try:
     export_combined_06()
-    print("combined_06.csv 存在：", _os.path.exists("combined_06.csv"))
-    print("绝对路径：", _os.path.abspath("combined_06.csv"))
-    if _os.path.exists("combined_06.csv"):
-        print("文件大小：", _os.path.getsize("combined_06.csv"), "字节")
 except Exception as e:
     print("combined_06.csv 生成失败：", e)
