@@ -744,12 +744,8 @@ function renderLineChart() {
   document.getElementById("lineLegend").innerHTML =
     LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
 
-  const titleEl = document.getElementById("lineTitle");
-  if (lineTab === "daily") {
-    titleEl.textContent = series.lastDay ? `分数趋势 · ${fmtTime(series.lastDay)}` : "分数趋势";
-  } else {
-    titleEl.textContent = "分数趋势";
-  }
+    const titleEl = document.getElementById("lineTitle");
+    titleEl.textContent = lineTab === "daily" ? "分数趋势 · 日榜" : "分数趋势 · 周榜";
 
   if (!chartLine) chartLine = echarts.init(document.getElementById("chartLine"));
 
