@@ -86,11 +86,14 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
 .recent-table {
     width: 100%; height: 100%; border-collapse: separate; border-spacing: 0;
-    font-size: 12px; table-layout: fixed; min-width: 720px;
+    font-size: 12px; table-layout: fixed; min-width: 0;
 }
 .recent-table th, .recent-table td {
-    padding: 8px 5px; text-align: center; border-bottom: 1px solid #f3e6ee;
-    white-space: nowrap; line-height: 1.5;
+    padding: 6px 3px;
+    text-align: center;
+    border-bottom: 1px solid #f3e6ee;
+    white-space: nowrap;
+    line-height: 1.4;
 }
 .recent-table th {
     background-color: #ea3690 !important; color: #ffffff; font-weight: bold; font-size: 11px;
@@ -99,10 +102,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .recent-table td:first-child {
     position: sticky; left: 0; z-index: 1; color: #555; background-color: #ffffff;
-    width: 96px; min-width: 96px; max-width: 96px;
+    width: 84px; min-width: 84px; max-width: 84px;
 }
-.recent-table col.col-time { width: 96px; }
-.recent-table col.col-type { width: 56px; }
+.recent-table col.col-time { width: 84px; }
+.recent-table col.col-type { width: 44px; }
 .recent-table col.col-metric { width: auto; }
 
 .recent-table th.col-time-sticky,
@@ -112,7 +115,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .recent-table th.col-type-sticky,
 .recent-table td.type-cell {
-    position: sticky; left: 96px; z-index: 6;
+    position: sticky; left: 84px; z-index: 6;
     background-color: inherit;
 }
 .recent-table thead th.col-time-sticky { z-index: 22; background-color: #ea3690 !important; }
@@ -169,6 +172,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 @media (max-width: 900px) {
     .charts-row { flex-wrap: wrap; }
     .chart-card { flex: 1 1 100%; height: 380px; }
+
     .headline-deltas .delta-box {
         grid-template-columns: 44px 52px 1px repeat(3, 64px);
         column-gap: 6px;
@@ -177,6 +181,17 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     }
     .headline-deltas .delta-total,
     .headline-deltas .delta-dim { font-size: 12px; }
+
+    .recent-table { font-size: 11px; }
+    .recent-table th, .recent-table td { padding: 5px 2px; }
+    .recent-table td { overflow: hidden; text-overflow: ellipsis; }
+    .recent-table td:first-child {
+        width: 76px; min-width: 76px; max-width: 76px;
+    }
+    .recent-table col.col-time { width: 76px; }
+    .recent-table col.col-type { width: 40px; }
+    .recent-table th.col-type-sticky,
+    .recent-table td.type-cell { left: 76px; }
 }
 
 #global-watermark {
@@ -775,7 +790,7 @@ function renderRadarChart() {
     },
     radar: {
       shape: "circle",
-      startAngle: 90,
+      startAngle: -90,
       indicator: indicators,
       center: ["50%", "55%"],
       radius: "55%",
@@ -786,13 +801,14 @@ function renderRadarChart() {
           return `{value|${v}}\n{name|${name}}`;
         },
         rich: {
-          name: { color: "#999", fontSize: 12, fontWeight: "normal", lineHeight: 18 },
+          name: { color: "#bbb", fontSize: 12, fontWeight: "normal", lineHeight: 18 },
           value: { color: "#ea3690", fontSize: 13, fontWeight: "bold", lineHeight: 18 }
         }
       },
-      splitLine: { lineStyle: { color: "#f0d6e4" } },
-      splitArea: { areaStyle: { color: ["#fdf7fa", "#ffffff"] } },
-      axisLine: { lineStyle: { color: "#f0d6e4" } }
+      splitNumber: 3,
+      splitLine: { lineStyle: { color: "rgba(234,54,144,0.12)" } },
+      splitArea: { show: false },
+      axisLine: { lineStyle: { color: "rgba(234,54,144,0.15)" } }
     },
     series: [{
       type: "radar",
@@ -800,12 +816,7 @@ function renderRadarChart() {
       data: [{
         value,
         name: "最新",
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: "rgba(255,142,99,0.35)" },
-            { offset: 1, color: "rgba(255,75,210,0.35)" }
-          ])
-        },
+        areaStyle: { color: "transparent" },
         lineStyle: {
           width: 3,
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
