@@ -564,20 +564,9 @@ function weeklySeries() {
   monday.setDate(monday.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
 
-  if (!list.length) {
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      const p = n => String(n).padStart(2, "0");
-      const label = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
-      labels.push(label);
-      axisLabels.push(label);
-    }
-    METRICS.forEach(m => data[m] = labels.map(() => null));
-    return { labels, axisLabels, data, last: null };
-  }
-
   const pickHours = [0, 4, 8, 12, 16, 20];
+
+  // 按 日期+小时 建索引
   const byDayHour = new Map();
   for (const { dt, r } of list) {
     const dk = dateKey(dt);
@@ -588,7 +577,7 @@ function weeklySeries() {
     byDayHour.get(dk).set(h, { dt, r });
   }
 
-  const seenDay = new Set();
+  // 固定 7 天 × 6 槽，每天等宽
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
@@ -597,29 +586,16 @@ function weeklySeries() {
     const dayLabel = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
     const hourMap = byDayHour.get(dk);
 
-    if (!hourMap) {
-      labels.push(dayLabel);
-      axisLabels.push(seenDay.has(dk) ? "" : dayLabel);
-      seenDay.add(dk);
-      for (const m of METRICS) data[m].push(null);
-      continue;
-    }
-
-    for (const h of pickHours) {
-      const hit = hourMap.get(h);
-      if (!hit) continue;
+    for (let j = 0; j < pickHours.length; j++) {
+      const h = pickHours[j];
       labels.push(`${dayLabel} ${p(h)}:26`);
-      if (!seenDay.has(dk)) {
-        seenDay.add(dk);
-        axisLabels.push(dayLabel);
-      } else {
-        axisLabels.push("");
-      }
-      for (const m of METRICS) data[m].push(parseFloat(hit.r[m]) || null);
+      axisLabels.push(j === 0 ? dayLabel : "");
+      const hit = hourMap ? hourMap.get(h) : null;
+      for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
     }
   }
 
-  const lastItem = list[list.length - 1];
+  const lastItem = list.length ? list[list.length - 1] : null;
   return { labels, axisLabels, data, last: lastItem };
 }
 
