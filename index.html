@@ -532,10 +532,8 @@ function deltaAt(series, idx, key) {
 
 function renderLineChart() {
   const series = lineTab === "daily" ? dailySeries() : weeklySeries();
-  const hint = lineTab === "daily" ? "日榜：每天 6:06 至次日 0:16" : "周榜：本周内，每天取 0:26 与最新一条";
   document.getElementById("lineLegend").innerHTML =
-    LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("")
-    + `<br><span style="color:#bbb;font-size:11px;">${hint}</span>`;
+  LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
 
   const titleEl = document.getElementById("lineTitle");
   if (lineTab === "daily") {
