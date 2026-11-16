@@ -113,6 +113,7 @@ def upsert_rows(rows, filename=CSV_FILE):
     """
     新增：时间不存在 -> 追加一行（修正列为空）
     修正：时间已存在但数值变了 -> 原行不动，新值写入对应 _修正 列
+    同时保证文件开头一定有表头。
     """
     existing = load_existing(filename)
     new_rows = []
@@ -136,17 +137,15 @@ def upsert_rows(rows, filename=CSV_FILE):
             if changed:
                 updated_rows[t] = old
 
-    # 追加新行
-    if new_rows:
-        file_exists = os.path.exists(filename)
-        with open(filename, "a", newline="", encoding="utf-8-sig") as f:
-            writer = csv.DictWriter(f, fieldnames=FIELDS)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerows(new_rows)
+    # 判断文件是否需要补表头：不存在 / 为空 / 第一行不是表头
+    need_header = True
+    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+        with open(filename, "r", encoding="utf-8-sig") as f:
+            first_line = f.readline().lstrip("\ufeff").strip()
+        need_header = first_line != ",".join(FIELDS)
 
-    # 有修正时重写整个文件
-    if updated_rows:
+    # 需要补表头，或者有修正行 -> 重写整个文件
+    if need_header or updated_rows:
         all_rows = []
         for t, row in existing.items():
             all_rows.append(updated_rows.get(t, row))
@@ -156,6 +155,11 @@ def upsert_rows(rows, filename=CSV_FILE):
             writer = csv.DictWriter(f, fieldnames=FIELDS)
             writer.writeheader()
             writer.writerows(all_rows)
+    elif new_rows:
+        # 文件已有正确表头且无修正 -> 直接追加
+        with open(filename, "a", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writerows(new_rows)
 
     print(f"新增 {len(new_rows)} 行，修正 {len(updated_rows)} 行")
     print(f"CSV 文件路径: {filename}")
