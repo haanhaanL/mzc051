@@ -518,13 +518,6 @@ function renderTable() {
   });
 }
 
-// 微博表：每 2 小时一个时段，按“时段 + 日期”奇偶交替背景
-function weiboSegmentClass(dt) {
-  const seg = Math.floor(dt.getHours() / 2);
-  const dayNum = Math.floor(dt.getTime() / 86400000);
-  return (seg + dayNum) % 2 === 1 ? " row-group-alt" : "";
-}
-
 function renderWeiboTable() {
   const tbody = document.querySelector("#weibo-table tbody");
   if (!tbody) return;
@@ -541,9 +534,9 @@ function renderWeiboTable() {
     return;
   }
 
-  rows.forEach(r => {
+  rows.forEach((r, idx) => {
     const tr = document.createElement("tr");
-    tr.className = "row-weekly" + weiboSegmentClass(r._dt);
+    tr.className = "row-weekly" + (idx % 2 === 1 ? " row-group-alt" : "");
     const cells = WEIBO_FIELDS.map(f => `<td>${r[f] || "-"}</td>`).join("");
     tr.innerHTML = `<td class="time-cell">${fmtTime(r._dt)}</td>${cells}`;
     tbody.appendChild(tr);
