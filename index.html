@@ -171,6 +171,24 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     margin-right: 4px; vertical-align: middle;
 }
 
+.radar-total {
+    text-align: center;
+    margin: 0 8px 6px 8px;
+    line-height: 1.25;
+}
+.radar-total .radar-total-value {
+    display: block;
+    color: #ea3690;
+    font-size: 20px;
+    font-weight: bold;
+}
+.radar-total .radar-total-label {
+    display: block;
+    color: #bbb;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
 .empty-row td { color: #999; padding: 30px 0; }
 
 .page-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -320,6 +338,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
           <button class="range-btn" data-range="daily">日榜</button>
         </div>
         <div class="chart-legend-text" id="radarLegend"></div>
+        <div class="radar-total" id="radarTotal"></div>
         <div class="chart-wrapper-flex" id="chartRadar"></div>
       </div>
     </div>
@@ -335,7 +354,7 @@ const WEIBO_CSV = "weibo_trend.csv";
 const HOURLY_CSV = "combined_06.csv";
 const WEIBO_FIELDS = ["阅读量", "讨论量", "互动量", "原创量"];
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
-const RADAR_METRICS = ["推荐度", "畅销度", "播放热度"];
+const RADAR_METRICS = ["播放热度", "畅销度", "推荐度"];
 const LINE_FIELDS = [
   { key: "综合得分", label: "总分", color: "#ea3690" },
   { key: "播放热度", label: "播放热度", color: "#7c3aed" },
@@ -852,6 +871,8 @@ function renderRadarChart() {
       title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: "#999", fontSize: 14 } }
     }, true);
     document.getElementById("radarLegend").innerHTML = "";
+    const radarTotalElEmpty = document.getElementById("radarTotal");
+    if (radarTotalElEmpty) radarTotalElEmpty.innerHTML = "";
     return;
   }
 
@@ -867,6 +888,14 @@ function renderRadarChart() {
 
   document.getElementById("radarLegend").innerHTML =
     `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`;
+
+  const radarTotalEl = document.getElementById("radarTotal");
+  if (radarTotalEl) {
+    const totalVal = last.r["综合得分"];
+    radarTotalEl.innerHTML =
+      `<span class="radar-total-value">${totalVal || "-"}</span>`
+      + `<span class="radar-total-label">总分</span>`;
+  }
 
   chartRadar.setOption({
     tooltip: {
@@ -900,8 +929,8 @@ function renderRadarChart() {
       shape: "circle",
       startAngle: -90,
       indicator: indicators,
-      center: ["50%", "46%"],
-      radius: "62%",
+      center: ["50%", "50%"],
+      radius: "78%",
       axisName: {
         formatter: function (name) {
           const idx = indicators.findIndex(x => x.name === name);
@@ -926,7 +955,9 @@ function renderRadarChart() {
         name: "最新",
         areaStyle: { color: "transparent" },
         lineStyle: {
-          width: 3,
+          width: 5,
+          join: "round",
+          cap: "round",
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: "#FF8E63" },
             { offset: 1, color: "#FF4BD2" }
