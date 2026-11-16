@@ -122,12 +122,23 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table thead th.col-type-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table td.time-cell { vertical-align: middle; }
 
-.recent-table tbody tr.row-daily { background-color: #ffffff; }
-.recent-table tbody tr.row-weekly { background-color: #fdf7fa; }
+/* 日榜行浅橙、周榜行浅粉 */
+.recent-table tbody tr.row-daily td { background-color: #fff7ed; }
+.recent-table tbody tr.row-weekly td { background-color: #fdf2f8; }
+
+/* 时间列和榜单列跟随行底色 */
 .recent-table tbody tr.row-daily td.time-cell,
-.recent-table tbody tr.row-daily td.type-cell { background-color: #ffffff; }
+.recent-table tbody tr.row-daily td.type-cell { background-color: #fff7ed; }
 .recent-table tbody tr.row-weekly td.time-cell,
-.recent-table tbody tr.row-weekly td.type-cell { background-color: #fdf7fa; }
+.recent-table tbody tr.row-weekly td.type-cell { background-color: #fdf2f8; }
+
+/* 按业务日分组交替：偶数组加深一档 */
+.recent-table tbody tr.row-group-alt.row-daily td,
+.recent-table tbody tr.row-group-alt.row-daily td.time-cell,
+.recent-table tbody tr.row-group-alt.row-daily td.type-cell { background-color: #ffedd5; }
+.recent-table tbody tr.row-group-alt.row-weekly td,
+.recent-table tbody tr.row-group-alt.row-weekly td.time-cell,
+.recent-table tbody tr.row-group-alt.row-weekly td.type-cell { background-color: #fce7f3; }
 
 .type-badge {
     display: inline-block; font-size: 10px; padding: 1px 6px;
@@ -143,7 +154,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit;
 }
 .range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
-.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px; line-height: 1.8; }
 .chart-legend-text .item { display: inline-block; margin: 0 5px; }
 .chart-legend-text .dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
@@ -493,22 +504,23 @@ function renderTable() {
     }).join("");
   };
 
-  for (const key of keys) {
+  keys.forEach((key, idx) => {
     const group = map.get(key);
+    const altCls = idx % 2 === 1 ? " row-group-alt" : "";
 
     const trDaily = document.createElement("tr");
-    trDaily.className = "row-daily";
+    trDaily.className = "row-daily" + altCls;
     trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
       + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
       + `${renderCells(group, "日榜")}`;
     tbody.appendChild(trDaily);
 
     const trWeekly = document.createElement("tr");
-    trWeekly.className = "row-weekly";
+    trWeekly.className = "row-weekly" + altCls;
     trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
       + `${renderCells(group, "周榜")}`;
     tbody.appendChild(trWeekly);
-  }
+  });
 }
 
 function dailySeries() {
@@ -792,7 +804,7 @@ function renderRadarChart() {
       shape: "circle",
       startAngle: -90,
       indicator: indicators,
-      center: ["50%", "50%"],
+      center: ["50%", "46%"],
       radius: "62%",
       axisName: {
         formatter: function (name) {
