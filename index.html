@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>mzc051-由你</title>
+<title>mzc051-阴天也会有烦恼吗</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <link rel="icon" href="data:,">
 <style>
@@ -230,6 +230,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     background-repeat: repeat;
     background-size: 200px 120px;
 }
+
+/* 微博话题表格：指标用中性色，避免整行粉色 */
+#weibo-table tbody tr td { color: #333; }
+#weibo-table tbody tr td.time-cell { color: #555; }
 </style>
 </head>
 <body>
@@ -240,7 +244,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
   <div class="page-grid">
     <div class="card table-card">
-      <div class="title">周/日榜记录 · 最近 12 条</div>
+      <div class="title">由你-周/日榜 · 最近 12 条</div>
       <div class="table-scroll-box">
         <table class="recent-table" id="data-table">
           <colgroup>
@@ -258,6 +262,31 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
               <th>播放热度</th>
               <th>畅销度</th>
               <th>推荐度</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="title">微博话题 · 最近 12 条</div>
+      <div class="table-scroll-box">
+        <table class="recent-table" id="weibo-table">
+          <colgroup>
+            <col class="col-time">
+            <col class="col-metric">
+            <col class="col-metric">
+            <col class="col-metric">
+            <col class="col-metric">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col-time-sticky">时间</th>
+              <th>阅读量</th>
+              <th>讨论量</th>
+              <th>互动量</th>
+              <th>原创量</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -294,6 +323,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <script>
 const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
+const WEIBO_CSV = "weibo_trend.csv";
+const WEIBO_FIELDS = ["阅读量", "讨论量", "互动量", "原创量"];
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
 const RADAR_METRICS = ["推荐度", "畅销度", "播放热度"];
 const LINE_FIELDS = [
@@ -309,7 +340,7 @@ const TABLE_FIELDS = [
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
 
-let dailyRows = [], weeklyRows = [];
+let dailyRows = [], weeklyRows = [], weiboRows = [];
 let lineTab = "weekly", radarTab = "weekly";
 let chartLine = null, chartRadar = null;
 
@@ -324,7 +355,8 @@ function parseCSV(text) {
   });
 }
 function parseTime(s) {
-  const m = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);
+  if (!s) return null;
+  let m = s.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2})/);
   if (!m) return null;
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
 }
@@ -536,6 +568,30 @@ function renderTable() {
     trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
       + `${renderCells(group, "周榜")}`;
     tbody.appendChild(trWeekly);
+  });
+}
+
+function renderWeiboTable() {
+  const tbody = document.querySelector("#weibo-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const rows = weiboRows
+    .map(r => ({ ...r, _dt: parseTime(r["时间"]) }))
+    .filter(r => r._dt)
+    .sort((a, b) => b._dt - a._dt)
+    .slice(0, 12);
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据</td></tr>';
+    return;
+  }
+
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+    const cells = WEIBO_FIELDS.map(f => `<td>${r[f] || "-"}</td>`).join("");
+    tr.innerHTML = `<td class="time-cell">${fmtTime(r._dt)}</td>${cells}`;
+    tbody.appendChild(tr);
   });
 }
 
@@ -877,14 +933,16 @@ document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').for
 });
 
 async function load() {
-  const [d, w] = await Promise.all([
+  const [d, w, wb] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
-    fetch(WEEKLY_CSV).then(r => r.text()).catch(() => "")
+    fetch(WEEKLY_CSV).then(r => r.text()).catch(() => ""),
+    fetch(WEIBO_CSV).then(r => r.text()).catch(() => "")
   ]);
   dailyRows = d ? parseCSV(d) : [];
   weeklyRows = w ? parseCSV(w) : [];
+  weiboRows = wb ? parseCSV(wb) : [];
 
-  const all = [...dailyRows, ...weeklyRows]
+  const all = [...dailyRows, ...weeklyRows, ...weiboRows]
     .map(r => parseTime(r["时间"]))
     .filter(Boolean)
     .sort((a, b) => b - a);
@@ -893,6 +951,7 @@ async function load() {
 
   renderHeadlineDeltas();
   renderTable();
+  renderWeiboTable();
   renderLineChart();
   renderRadarChart();
 }
