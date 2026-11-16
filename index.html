@@ -420,7 +420,9 @@ function renderHeadlineDeltas() {
   el.innerHTML =
     `<div class="delta-box">`
     + `<div class="delta-head">`
-    + `<span></span><span></span><span></span>`
+    + `<span></span>`
+    + `<span class="delta-dim-head">总分</span>`
+    + `<span></span>`
     + DIMS.map(d => `<span class="delta-dim-head">${d}</span>`).join("")
     + `</div>`
     + buildLine("日榜", dailyDelta, dailyDimDeltas, "daily")
@@ -542,7 +544,8 @@ function dailySeries() {
   return { labels, axisLabels, data, last: pickLast(groups), lastDay };
 }
 
-/* 周榜：横轴只显示日期，曲线包含本周所有小时点 */
+/* 周榜：只取每天 00:26 04:26 08:26 12:26 16:26 20:26
+   横轴只显示 7 个日期 */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -561,13 +564,6 @@ function weeklySeries() {
   monday.setDate(monday.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
 
-  const dayKeys = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    dayKeys.push(dateKey(d));
-  }
-
   if (!list.length) {
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
@@ -581,27 +577,45 @@ function weeklySeries() {
     return { labels, axisLabels, data, last: null };
   }
 
-  const seenDay = new Set();
+  const pickHours = [0, 4, 8, 12, 16, 20];
+  const byDayHour = new Map();
   for (const { dt, r } of list) {
-    const p = n => String(n).padStart(2, "0");
     const dk = dateKey(dt);
-    const label = `${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
-    labels.push(label);
-    if (!seenDay.has(dk)) {
-      seenDay.add(dk);
-      axisLabels.push(`${p(dt.getMonth() + 1)}/${p(dt.getDate())}`);
-    } else {
-      axisLabels.push("");
-    }
-    for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
+    const h = dt.getHours();
+    if (!pickHours.includes(h)) continue;
+    if (dt.getMinutes() !== 26) continue;
+    if (!byDayHour.has(dk)) byDayHour.set(dk, new Map());
+    byDayHour.get(dk).set(h, { dt, r });
   }
 
-  for (const dk of dayKeys) {
-    if (!seenDay.has(dk)) {
-      const [y, mo, da] = dk.split("-").map(Number);
-      labels.push(`${String(mo).padStart(2, "0")}/${String(da).padStart(2, "0")}`);
-      axisLabels.push(`${String(mo).padStart(2, "0")}/${String(da).padStart(2, "0")}`);
+  const seenDay = new Set();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    const p = n => String(n).padStart(2, "0");
+    const dk = dateKey(d);
+    const dayLabel = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+    const hourMap = byDayHour.get(dk);
+
+    if (!hourMap) {
+      labels.push(dayLabel);
+      axisLabels.push(seenDay.has(dk) ? "" : dayLabel);
+      seenDay.add(dk);
       for (const m of METRICS) data[m].push(null);
+      continue;
+    }
+
+    for (const h of pickHours) {
+      const hit = hourMap.get(h);
+      if (!hit) continue;
+      labels.push(`${dayLabel} ${p(h)}:26`);
+      if (!seenDay.has(dk)) {
+        seenDay.add(dk);
+        axisLabels.push(dayLabel);
+      } else {
+        axisLabels.push("");
+      }
+      for (const m of METRICS) data[m].push(parseFloat(hit.r[m]) || null);
     }
   }
 
