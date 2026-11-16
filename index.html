@@ -139,15 +139,28 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table tbody tr.row-group-alt.row-weekly td.time-cell,
 .recent-table tbody tr.row-group-alt.row-weekly td.type-cell { background-color: #fdf7fa; }
 
-/* 文字：日榜橙色、周榜粉色 */
+/* 文字：日榜橙色、周榜粉色（仅影响指标列，时间列/榜单列单独处理） */
 .recent-table tbody tr.row-daily td { color: #fa8c16; }
 .recent-table tbody tr.row-weekly td { color: #ea3690; }
 
-/* 分数和涨幅的原有颜色优先级更高，保留 */
+/* 时间列单独颜色 */
+.recent-table tbody tr td.time-cell { color: #555; }
+
+/* 分隔符单独颜色 */
+.recent-table .cell-sep { color: #999; }
 .recent-table .cell-main { color: #333; }
 .recent-table .cell-change.up { color: #ea3690; }
 .recent-table .cell-change.down { color: #27ae60; }
 .recent-table .cell-change.flat { color: #999; }
+
+/* 日榜行底部（与周榜行之间的分割线）更浅 */
+.recent-table tbody tr.row-daily td {
+    border-bottom-color: #faf3f7;
+}
+/* 周榜行底部（与下一组之间的分割线）保持稍明显 */
+.recent-table tbody tr.row-weekly td {
+    border-bottom-color: #f3e6ee;
+}
 
 .type-badge {
     display: inline-block; font-size: 10px; padding: 1px 6px;
@@ -163,7 +176,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit;
 }
 .range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
-.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px; line-height: 1.8; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
 .chart-legend-text .item { display: inline-block; margin: 0 5px; }
 .chart-legend-text .dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
@@ -171,12 +184,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 
 .empty-row td { color: #999; padding: 30px 0; }
-
-.cell-main { font-weight: bold; color: #333; }
-.cell-change { font-size: 11px; margin-left: 1px; }
-.cell-change.up { color: #ea3690; }
-.cell-change.down { color: #27ae60; }
-.cell-change.flat { color: #999; }
 
 .page-grid { display: flex; flex-direction: column; gap: 12px; }
 .table-card { display: flex; flex-direction: column; max-height: 620px; }
