@@ -19,7 +19,6 @@ body {
 h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
 
-/* 表头下方涨幅：一个外框内两行，列对齐 */
 .headline-deltas {
     display: flex;
     justify-content: center;
@@ -254,7 +253,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
-const RADAR_METRICS = ["播放热度", "畅销度", "推荐度"];
+const RADAR_METRICS = ["推荐度", "畅销度", "播放热度"];
 const LINE_FIELDS = [
   { key: "综合得分", label: "总分", color: "#ea3690" },
   { key: "播放热度", label: "播放热度", color: "#7c3aed" },
@@ -308,8 +307,6 @@ function businessWeek(dt) {
   return dateKey(d);
 }
 
-/* 表头下方涨幅：日榜 = 最新 − 当天 06:06；周榜 = 最新 − 所在周周一 00:26
-   同时计算三个维度的涨幅 */
 function computeHeadlineDeltas() {
   let dailyDelta = "-";
   let weeklyDelta = "-";
@@ -322,7 +319,6 @@ function computeHeadlineDeltas() {
     return isNaN(n) ? null : n;
   };
 
-  // 日榜
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -349,7 +345,6 @@ function computeHeadlineDeltas() {
     }
   }
 
-  // 周榜
   let latestW = null;
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
@@ -544,8 +539,6 @@ function dailySeries() {
   return { labels, axisLabels, data, last: pickLast(groups), lastDay };
 }
 
-/* 周榜：只取每天 00:26 04:26 08:26 12:26 16:26 20:26
-   横轴只显示 7 个日期 */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -566,7 +559,6 @@ function weeklySeries() {
 
   const pickHours = [0, 4, 8, 12, 16, 20];
 
-  // 按 日期+小时 建索引
   const byDayHour = new Map();
   for (const { dt, r } of list) {
     const dk = dateKey(dt);
@@ -577,7 +569,6 @@ function weeklySeries() {
     byDayHour.get(dk).set(h, { dt, r });
   }
 
-  // 固定 7 天 × 6 槽，每天等宽
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
@@ -783,6 +774,8 @@ function renderRadarChart() {
       }
     },
     radar: {
+      shape: "circle",
+      startAngle: 90,
       indicator: indicators,
       center: ["50%", "55%"],
       radius: "55%",
@@ -790,7 +783,7 @@ function renderRadarChart() {
         formatter: function (name) {
           const idx = indicators.findIndex(x => x.name === name);
           const v = idx >= 0 ? value[idx] : "";
-          return `{name|${name}}\n{value|${v}}`;
+          return `{value|${v}}\n{name|${name}}`;
         },
         rich: {
           name: { color: "#999", fontSize: 12, fontWeight: "normal", lineHeight: 18 },
@@ -803,12 +796,24 @@ function renderRadarChart() {
     },
     series: [{
       type: "radar",
+      symbol: "none",
       data: [{
         value,
         name: "最新",
-        areaStyle: { color: "rgba(234,54,144,0.25)" },
-        lineStyle: { color: "#ea3690", width: 2 },
-        itemStyle: { color: "#ea3690" }
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "rgba(255,142,99,0.35)" },
+            { offset: 1, color: "rgba(255,75,210,0.35)" }
+          ])
+        },
+        lineStyle: {
+          width: 3,
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: "#FF8E63" },
+            { offset: 1, color: "#FF4BD2" }
+          ])
+        },
+        itemStyle: { color: "#FF4BD2" }
       }]
     }]
   }, true);
