@@ -39,9 +39,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     border: 1px solid rgba(234,54,144,0.25);
     box-shadow: 0 2px 8px rgba(234,54,144,0.10);
 }
-.headline-deltas .delta-line.weekly {
-    background: #fdf7fa;
-}
+.headline-deltas .delta-line.weekly { background: #fdf7fa; }
 .headline-deltas .delta-badge {
     display: inline-block;
     font-size: 11px;
@@ -50,29 +48,14 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     line-height: 16px;
     font-weight: bold;
 }
-.headline-deltas .delta-line.daily .delta-badge {
-    background: #fff4e5;
-    color: #fa8c16;
-}
-.headline-deltas .delta-line.weekly .delta-badge {
-    background: #fde7f1;
-    color: #ea3690;
-}
+.headline-deltas .delta-line.daily .delta-badge { background: #fff4e5; color: #fa8c16; }
+.headline-deltas .delta-line.weekly .delta-badge { background: #fde7f1; color: #ea3690; }
 .headline-deltas .delta-total,
-.headline-deltas .delta-dim {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
+.headline-deltas .delta-dim { display: inline-flex; align-items: center; gap: 4px; }
 .headline-deltas .delta-divider {
-    width: 1px;
-    height: 14px;
-    background: rgba(234,54,144,0.20);
+    width: 1px; height: 14px; background: rgba(234,54,144,0.20);
 }
-.headline-deltas .delta-label {
-    color: #999;
-    font-size: 11px;
-}
+.headline-deltas .delta-label { color: #999; font-size: 11px; }
 .headline-deltas .up { color: #ea3690; font-weight: bold; font-size: 13px; }
 .headline-deltas .down { color: #27ae60; font-weight: bold; font-size: 13px; }
 .headline-deltas .flat { color: #999; font-weight: bold; font-size: 13px; }
@@ -132,11 +115,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table tbody tr.row-weekly td.type-cell { background-color: #fdf7fa; }
 
 .type-badge {
-    display: inline-block;
-    font-size: 10px;
-    padding: 1px 6px;
-    border-radius: 3px;
-    line-height: 14px;
+    display: inline-block; font-size: 10px; padding: 1px 6px;
+    border-radius: 3px; line-height: 14px;
 }
 .type-badge.daily { background: #fff4e5; color: #fa8c16; }
 .type-badge.weekly { background: #fde7f1; color: #ea3690; }
@@ -307,12 +287,15 @@ function businessWeek(dt) {
   return dateKey(d);
 }
 
-/* 表头下方单独一行：日榜涨幅 / 周榜涨幅
-   日榜：最后一天最新一条 - 当天 06:06（没有 06:06 就找 6:06，解析后等价）
-   周榜：最新一条 - 它所在周周一 00:26 */
+/* 表头下方涨幅：日榜 = 最新 − 当天 06:06；周榜 = 最新 − 所在周周一 00:26
+   同时计算三个维度的涨幅 */
 function computeHeadlineDeltas() {
   let dailyDelta = "-";
   let weeklyDelta = "-";
+  const dailyDimDeltas = { "播放热度": "-", "畅销度": "-", "推荐度": "-" };
+  const weeklyDimDeltas = { "播放热度": "-", "畅销度": "-", "推荐度": "-" };
+  const DIMS = ["播放热度", "畅销度", "推荐度"];
+
   const num = v => {
     const n = parseFloat(v);
     return isNaN(n) ? null : n;
@@ -329,13 +312,19 @@ function computeHeadlineDeltas() {
   }
   const dKeys = [...dGroups.keys()].sort();
   if (dKeys.length) {
-    const list = dGroups.get(dKeys[dKeys.length - 1]).sort((a, b) => a.dt - b.dt);
+    const lastKey = dKeys[dKeys.length - 1];
+    const list = dGroups.get(lastKey).sort((a, b) => a.dt - b.dt);
     const latest = list[list.length - 1];
     const six = list.find(x => x.dt.getHours() === 6 && x.dt.getMinutes() === 6);
     if (latest && six) {
       const a = num(latest.r["综合得分"]);
       const b = num(six.r["综合得分"]);
       if (a !== null && b !== null) dailyDelta = (a - b).toFixed(2);
+      DIMS.forEach(d => {
+        const x = num(latest.r[d]);
+        const y = num(six.r[d]);
+        if (x !== null && y !== null) dailyDimDeltas[d] = (x - y).toFixed(2);
+      });
     }
   }
 
@@ -366,21 +355,15 @@ function computeHeadlineDeltas() {
       const a = num(latestW.r["综合得分"]);
       const b = num(monday026.r["综合得分"]);
       if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
+      DIMS.forEach(d => {
+        const x = num(latestW.r[d]);
+        const y = num(monday026.r[d]);
+        if (x !== null && y !== null) weeklyDimDeltas[d] = (x - y).toFixed(2);
+      });
     }
   }
 
-  return { dailyDelta, weeklyDelta };
-}
-
-function fmtDelta(v) {
-  if (v === "-" || v == null) return "-";
-  const n = parseFloat(v);
-  if (isNaN(n)) return "-";
-  return (n > 0 ? "+" : "") + n.toFixed(2);
-}
-function deltaCls(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? "flat" : (n > 0 ? "up" : (n < 0 ? "down" : "flat"));
+  return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas };
 }
 
 function renderHeadlineDeltas() {
@@ -491,7 +474,6 @@ function renderTable() {
   }
 }
 
-/* 日榜序列：横轴固定 06:06 到 00:16，无数据也完整 */
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -535,7 +517,6 @@ function dailySeries() {
   return { labels, axisLabels, data, last: pickLast(groups), lastDay };
 }
 
-/* 周榜序列：横轴固定本周 7 天，无数据也完整 */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -604,7 +585,7 @@ function deltaAt(series, idx, key) {
 function renderLineChart() {
   const series = lineTab === "daily" ? dailySeries() : weeklySeries();
   document.getElementById("lineLegend").innerHTML =
-  LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
+    LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
 
   const titleEl = document.getElementById("lineTitle");
   if (lineTab === "daily") {
@@ -720,6 +701,10 @@ function renderRadarChart() {
     document.getElementById("radarLegend").innerHTML = "";
     return;
   }
+
+  const { dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
+  const dimDeltas = radarTab === "daily" ? dailyDimDeltas : weeklyDimDeltas;
+
   const dims = RADAR_METRICS.map(name => ({ name, key: name }));
   const indicators = dims.map(d => ({ name: d.name, max: 100 }));
   const value = dims.map(d => {
@@ -730,8 +715,6 @@ function renderRadarChart() {
   document.getElementById("radarLegend").innerHTML =
     `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`;
 
-  const lastIdx = series.labels.indexOf(fmtTime(last.dt));
-
   chartRadar.setOption({
     tooltip: {
       trigger: "item",
@@ -740,11 +723,14 @@ function renderRadarChart() {
         let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${fmtTime(last.dt)}</div>`;
         dims.forEach(d => {
           const val = last.r[d.key] || "-";
-          const dlt = lastIdx >= 0 ? deltaAt(series, lastIdx, d.key) : null;
+          const raw = dimDeltas[d.key] || "-";
           let deltaText = "-", deltaColor = "#999";
-          if (dlt !== null && !isNaN(dlt)) {
-            deltaText = (dlt > 0 ? "+" : "") + dlt.toFixed(2);
-            deltaColor = dlt > 0 ? "#ea3690" : "#999";
+          if (raw !== "-") {
+            const n = parseFloat(raw);
+            if (!isNaN(n)) {
+              deltaText = (n > 0 ? "+" : "") + n.toFixed(2);
+              deltaColor = n > 0 ? "#ea3690" : (n < 0 ? "#27ae60" : "#999");
+            }
           }
           html += `<div style="display:flex;align-items:center;gap:12px;min-width:230px;line-height:20px;">`
             + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
