@@ -13,7 +13,7 @@ USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit
 TREND_URL = "https://m.s.weibo.com/ajax_topic/trend"
 PARAMS = {"q": "#穆祉丞生日单曲阴天也会有烦恼吗#", "version": "v1", "time": "6m"}
 
-# 建议改成绝对路径，避免 cron/Actions 工作目录不一致
+# 绝对路径，避免 Actions 工作目录不一致
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weibo_trend.csv")
 
 BASE_FIELDS = ["时间", "阅读量", "讨论量", "互动量", "原创量"]
@@ -25,6 +25,9 @@ METRIC_MAP = {
     "partake": "互动量",
     "ori": "原创量",
 }
+
+# Actions 里建议开启，刷新短期令牌
+ENABLE_REFRESH = True
 
 
 # ============================================================
@@ -38,11 +41,13 @@ def build_session():
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "zh-CN,zh;q=0.9",
     })
-    # 解析环境变量里的 Cookie 字符串
-    for item in INIT_COOKIE.split("; "):
+    # 兼容 "; " 和 ";" 两种分隔
+    for item in INIT_COOKIE.split(";"):
+        item = item.strip()
         if "=" in item:
             k, v = item.split("=", 1)
-            sess.cookies.set(k, v)
+            sess.cookies.set(k.strip(), v.strip())
+    print(f"已加载 {len(sess.cookies)} 个 Cookie 字段: {list(sess.cookies.keys())}")
     return sess
 
 
@@ -87,8 +92,8 @@ def load_existing(filename):
 
 def parse_trend(data, now=None):
     """
-    把 {"read":[...], "me":[...], "ori":[...], "partake":[...]}
-    按 time 合并并补全日期，返回按时间排序的行列表。
+    data 是接口返回里的内层 data，形如：
+    {"read":[...], "me":[...], "ori":[...], "partake":[...]}
     """
     merged = {}
     for key, col in METRIC_MAP.items():
@@ -153,6 +158,7 @@ def upsert_rows(rows, filename=CSV_FILE):
             writer.writerows(all_rows)
 
     print(f"新增 {len(new_rows)} 行，修正 {len(updated_rows)} 行")
+    print(f"CSV 文件路径: {filename}")
     return len(new_rows), len(updated_rows)
 
 
@@ -165,21 +171,50 @@ def main():
         return
 
     sess = build_session()
-    refresh_cookie(sess)
+    if ENABLE_REFRESH:
+        refresh_cookie(sess)
 
     try:
         resp = sess.get(TREND_URL, params=PARAMS, timeout=15)
+        print(f"HTTP 状态码: {resp.status_code}")
+
         if resp.status_code != 200:
-            print(f"请求失败: {resp.status_code}, {resp.text[:200]}")
+            print(f"请求失败: {resp.status_code}, 返回前 300 字符: {resp.text[:300]}")
             return
-        data = resp.json()
-        rows = parse_trend(data)
+
+        resp_json = resp.json()
+        print(f"接口返回顶层键: {list(resp_json.keys()) if isinstance(resp_json, dict) else type(resp_json)}")
+
+        if not isinstance(resp_json, dict):
+            print("返回不是 JSON 对象，原始内容前 500 字符:")
+            print(resp.text[:500])
+            return
+
+        # 关键：真正的指标数据在 resp_json["data"] 里
+        inner_data = resp_json.get("data", {})
+        if not isinstance(inner_data, dict):
+            print(f"返回的 data 字段不是对象: {inner_data!r}")
+            print(f"原始返回前 500 字符: {resp.text[:500]}")
+            return
+
+        for k in METRIC_MAP:
+            v = inner_data.get(k)
+            print(f"  {k}: {len(v) if isinstance(v, list) else v!r} 条")
+
+        rows = parse_trend(inner_data)
         if not rows:
-            print("未解析到趋势数据，检查接口返回结构")
+            print("未解析到趋势数据，接口原始返回前 500 字符:")
+            print(resp.text[:500])
             return
+
+        print(f"解析到 {len(rows)} 行趋势数据")
         upsert_rows(rows)
     except Exception as e:
         print(f"爬取异常: {e}")
+        try:
+            print(f"响应内容前 300 字符: {resp.text[:300]}")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
