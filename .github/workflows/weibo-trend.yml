@@ -15,17 +15,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      - run: |
+
+      # 只装微博脚本需要的依赖，不碰 requirements.txt
+      - name: install deps
+        run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install requests
+
       - name: run weibo trend
         env:
           WEIBO_COOKIE: ${{ secrets.WEIBO_COOKIE }}
         run: python weibo_trend.py
+
       - name: commit csv
         run: |
           git config user.name github-actions
