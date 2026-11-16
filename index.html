@@ -2,53 +2,183 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>由你榜数据看板</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mzc051-由你</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link rel="icon" href="data:,">
 <style>
-  body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 24px; color: #222; }
-  h2 { margin: 24px 0 8px; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: center; }
-  th { background: #f5f5f5; }
-  tr.weekly td { background: #eef5ff; }
-  tr.daily td { background: #fff8e8; }
-  .tab-bar { display: flex; gap: 8px; margin-bottom: 12px; }
-  .tab-bar button { padding: 6px 18px; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
-  .tab-bar button.active { background: #1677ff; color: #fff; border-color: #1677ff; }
-  .chart-wrap { position: relative; height: 420px; }
-  .empty { color: #999; padding: 20px; text-align: center; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+    margin: 0; padding: 8px; background-color: #faf7f9; font-family: sans-serif;
+    box-sizing: border-box; min-height: 100vh;
+}
+.container { width: 100%; max-width: 1600px; min-height: calc(100vh - 16px); margin: 0 auto; box-sizing: border-box; }
+h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
+.update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
+
+.card {
+    background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
+    padding: 12px 0; overflow: hidden; border: 1px solid rgba(234,54,144,0.10);
+}
+.title { text-align: center; color: #ea3690; font-size: 15px; font-weight: bold; margin: 5px 0 8px 0; }
+
+.table-scroll-box {
+    width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+}
+.table-scroll-box::-webkit-scrollbar { display: none; }
+
+.recent-table {
+    width: 100%; height: 100%; border-collapse: separate; border-spacing: 0;
+    font-size: 12px; table-layout: fixed; min-width: 720px;
+}
+.recent-table th, .recent-table td {
+    padding: 8px 5px; text-align: center; border-bottom: 1px solid #f3e6ee;
+    white-space: nowrap; line-height: 1.5;
+}
+.recent-table th {
+    background-color: #ea3690 !important; color: #ffffff; font-weight: bold; font-size: 11px;
+    position: sticky; top: 0; z-index: 2; border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 0 #f3e6ee;
+}
+.recent-table thead tr:first-child th:first-child {
+    position: sticky !important; top: 0 !important; left: 0 !important; z-index: 20 !important;
+    background-color: #ea3690 !important; color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.recent-table td:first-child {
+    position: sticky; left: 0; z-index: 1; color: #555; background-color: #ffffff;
+    width: 130px; min-width: 130px; max-width: 130px;
+}
+.recent-table tbody tr:nth-child(even) td:first-child { background-color: #fdf7fa; }
+.recent-table tbody tr:nth-child(even) { background-color: #ea36900a; }
+
+/* 表格列宽：时间固定 130px，其余均分 */
+.recent-table col.col-time { width: 130px; }
+.recent-table col.col-metric { width: auto; }
+
+.range-tabs { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px 0; }
+.range-btn {
+    border: 1px solid rgba(234,54,144,0.35); background: white; color: #ea3690;
+    font-size: 12px; padding: 3px 12px; border-radius: 12px;
+    cursor: pointer; outline: none; font-family: inherit;
+}
+.range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
+.range-hint { text-align: center; font-size: 11px; color: #bbb; margin: 0 8px 4px 8px; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
+.chart-legend-text .item { display: inline-block; margin: 0 5px; }
+.chart-legend-text .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 4px; vertical-align: middle;
+}
+
+.type-tag { display: inline-block; font-size: 10px; padding: 0 4px; border-radius: 3px; margin-left: 2px; }
+.type-tag.weekly { background: #e8f0ff; color: #1677ff; }
+.type-tag.daily { background: #fff4e5; color: #fa8c16; }
+.empty-row td { color: #999; padding: 30px 0; }
+
+/* 单元格：分数 / 涨幅 */
+.cell-main { font-weight: bold; color: #333; }
+.cell-change { font-size: 11px; margin-left: 1px; }
+.cell-change.up { color: #ea3690; }
+.cell-change.down { color: #27ae60; }
+.cell-change.flat { color: #999; }
+
+.page-grid { display: flex; flex-direction: column; gap: 12px; }
+.table-card { display: flex; flex-direction: column; max-height: 620px; }
+.table-card .table-scroll-box { flex: 1 1 auto; min-height: 0; }
+
+/* 两个图表同一行 */
+.charts-row { display: flex; gap: 12px; width: 100%; }
+.chart-card {
+    flex: 1 1 50%; min-width: 0; height: 460px;
+    display: flex; flex-direction: column;
+}
+.chart-card .chart-wrapper-flex { flex: 1 1 auto; min-height: 0; }
+
+@media (max-width: 900px) {
+    .charts-row { flex-wrap: wrap; }
+    .chart-card { flex: 1 1 100%; height: 380px; }
+}
 </style>
 </head>
 <body>
+<div class="container">
+  <h1>阴天也会有烦恼吗</h1>
+  <div class="update-time" id="update-time">加载中…</div>
 
-<h2>最近 12 条数据</h2>
-<table id="data-table">
-  <thead>
-    <tr>
-      <th>时间</th><th>总分</th><th>播放热度</th><th>畅销度</th><th>推荐度</th><th>总分涨幅</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <div class="page-grid">
+    <div class="card table-card">
+      <div class="title">周/日榜记录 · 最近 12 条</div>
+      <div class="table-scroll-box">
+        <table class="recent-table" id="data-table">
+          <colgroup>
+            <col class="col-time">
+            <col class="col-metric">
+            <col class="col-metric">
+            <col class="col-metric">
+            <col class="col-metric">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>总分</th>
+              <th>播放热度</th>
+              <th>畅销度</th>
+              <th>推荐度</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
 
-<h2>分数趋势</h2>
-<div class="tab-bar">
-  <button id="tab-daily" class="active">日榜</button>
-  <button id="tab-weekly">周榜</button>
-</div>
-<div class="chart-wrap">
-  <canvas id="trend-chart"></canvas>
+    <div class="charts-row">
+      <div class="card chart-card">
+        <div class="title">分数趋势</div>
+        <div class="range-tabs" data-chart="lineRange">
+          <button class="range-btn active" data-range="weekly">周榜</button>
+          <button class="range-btn" data-range="daily">日榜</button>
+        </div>
+        <div class="chart-legend-text" id="lineLegend"></div>
+        <div class="chart-wrapper-flex" id="chartLine"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="title">三维度</div>
+        <div class="range-tabs" data-chart="radarRange">
+          <button class="range-btn active" data-range="weekly">周榜</button>
+          <button class="range-btn" data-range="daily">日榜</button>
+        </div>
+        <div class="chart-legend-text" id="radarLegend"></div>
+        <div class="chart-wrapper-flex" id="chartRadar"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
+const RADAR_METRICS = ["播放热度", "畅销度", "推荐度"];
+const LINE_FIELDS = [
+  { key: "综合得分", label: "总分", color: "#ea3690" },
+  { key: "播放热度", label: "播放热度", color: "#7c3aed" },
+  { key: "畅销度", label: "畅销度", color: "#f97316" },
+  { key: "推荐度", label: "推荐度", color: "#00c853" }
+];
+// 表格四列对应的字段与涨幅字段
+const TABLE_FIELDS = [
+  { key: "综合得分", changeKey: "涨幅" },
+  { key: "播放热度", changeKey: "" },
+  { key: "畅销度", changeKey: "" },
+  { key: "推荐度", changeKey: "" }
+];
 
 let dailyRows = [], weeklyRows = [];
-let chart = null;
-let currentTab = "daily";
+let lineTab = "weekly", radarTab = "weekly";
+let chartLine = null, chartRadar = null;
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -60,20 +190,21 @@ function parseCSV(text) {
     return obj;
   });
 }
-
 function parseTime(s) {
   const m = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);
   if (!m) return null;
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
 }
-
+function fmtTime(dt) {
+  const p = n => String(n).padStart(2, "0");
+  return `${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
+}
 function businessDay(dt) {
   const d = new Date(dt);
   const minutes = d.getHours() * 60 + d.getMinutes();
   if (minutes <= 16) d.setDate(d.getDate() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-
 function businessWeek(dt) {
   const d = new Date(dt);
   const day = d.getDay();
@@ -82,53 +213,84 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
+/* ---------- 表格 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
 
-  const map = new Map();
-  const add = (rows, type) => {
-    for (const r of rows) {
-      const t = r["时间"];
-      if (!t) continue;
-      if (!map.has(t)) map.set(t, {});
-      map.get(t)[type] = r;
-    }
-  };
-  add(dailyRows, "日榜");
-  add(weeklyRows, "周榜");
+  const sortAsc = rows => rows
+    .filter(r => parseTime(r["时间"]))
+    .sort((a, b) => parseTime(a["时间"]) - parseTime(b["时间"]));
 
-  const times = [...map.keys()]
-    .sort((a, b) => parseTime(b) - parseTime(a))
+  const dailyAsc = sortAsc(dailyRows);
+  const weeklyAsc = sortAsc(weeklyRows);
+
+  // 为每条记录计算四个维度的涨幅
+  const addChanges = (rows) => rows.map((r, i) => {
+    const prev = i > 0 ? rows[i - 1] : null;
+    const changes = {};
+    TABLE_FIELDS.forEach(f => {
+      let change = "";
+      // 官方涨幅字段（只有综合得分有“涨幅”列）
+      if (f.changeKey && (r[f.changeKey] || "").trim()) {
+        change = (r[f.changeKey] || "").trim();
+      } else if (prev) {
+        const cur = parseFloat(r[f.key]);
+        const pv = parseFloat(prev[f.key]);
+        if (!isNaN(cur) && !isNaN(pv)) change = (cur - pv).toFixed(2);
+      }
+      changes[f.key] = change;
+    });
+    return { ...r, _changes: changes, _dt: parseTime(r["时间"]), _type: "" };
+  });
+
+  const daily = addChanges(dailyAsc).map(r => ({ ...r, _type: "日榜" }));
+  const weekly = addChanges(weeklyAsc).map(r => ({ ...r, _type: "周榜" }));
+
+  const map = new Map();
+  for (const r of [...daily, ...weekly]) {
+    const key = fmtTime(r._dt);
+    if (!map.has(key)) map.set(key, { dt: r._dt });
+    map.get(key)[r._type] = r;
+  }
+  const keys = [...map.keys()]
+    .sort((a, b) => map.get(b).dt - map.get(a).dt)
     .slice(0, 12);
 
-  if (!times.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
+  if (!keys.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据</td></tr>';
     return;
   }
 
-  for (const t of times) {
-    const group = map.get(t);
+  for (const key of keys) {
+    const group = map.get(key);
     for (const type of ["周榜", "日榜"]) {
       const r = group[type];
       const tr = document.createElement("tr");
-      tr.className = type === "周榜" ? "weekly" : "daily";
+      const tagCls = type === "周榜" ? "weekly" : "daily";
+      const tag = `<span class="type-tag ${tagCls}">${type}</span>`;
       if (!r) {
-        tr.innerHTML = `<td>${t}<br><small>${type}</small></td><td colspan="5">无数据</td>`;
+        tr.innerHTML = `<td>${key} ${tag}</td><td colspan="4">无数据</td>`;
       } else {
-        tr.innerHTML = `
-          <td>${t}<br><small>${type}</small></td>
-          <td>${r["综合得分"] || "-"}</td>
-          <td>${r["播放热度"] || "-"}</td>
-          <td>${r["畅销度"] || "-"}</td>
-          <td>${r["推荐度"] || "-"}</td>
-          <td>${r["涨幅"] || "-"}</td>`;
+        const cells = TABLE_FIELDS.map(f => {
+          const val = r[f.key] || "-";
+          const change = r._changes[f.key] || "";
+          let changeText = "-", cls = "flat";
+          if (change) {
+            const num = parseFloat(change);
+            changeText = (num > 0 ? "+" : "") + change;
+            cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
+          }
+          return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
+        }).join("");
+        tr.innerHTML = `<td>${key} ${tag}</td>${cells}`;
       }
       tbody.appendChild(tr);
     }
   }
 }
 
+/* ---------- 序列 ---------- */
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -148,11 +310,11 @@ function dailySeries() {
       })
       .sort((a, b) => a.dt - b.dt);
     for (const { dt, r } of list) {
-      labels.push(`${k} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`);
-      for (const m of METRICS) data[m].push(parseFloat(r[m]) || 0);
+      labels.push(fmtTime(dt));
+      for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
-  return { labels, data };
+  return { labels, data, last: pickLast(groups) };
 }
 
 function weeklySeries() {
@@ -179,56 +341,245 @@ function weeklySeries() {
     const latest = list[list.length - 1];
     const picked = early === latest ? [early] : [early, latest];
     for (const { dt, r } of picked) {
-      labels.push(`${k} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`);
-      for (const m of METRICS) data[m].push(parseFloat(r[m]) || 0);
+      labels.push(fmtTime(dt));
+      for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
-  return { labels, data };
+  return { labels, data, last: pickLast(groups) };
 }
 
-function renderChart() {
-  const series = currentTab === "daily" ? dailySeries() : weeklySeries();
-  const colors = {
-    "综合得分": "#1677ff",
-    "播放热度": "#52c41a",
-    "畅销度": "#fa8c16",
-    "推荐度": "#eb2f96"
-  };
-  const datasets = METRICS.map(m => ({
-    label: m,
-    data: series.data[m],
-    borderColor: colors[m],
-    backgroundColor: colors[m],
-    tension: 0.3,
-    pointRadius: 2
+function pickLast(groups) {
+  let latest = null;
+  for (const list of groups.values()) {
+    for (const item of list) {
+      if (!latest || item.dt > latest.dt) latest = item;
+    }
+  }
+  return latest;
+}
+
+/* 折线图 tooltip 的涨幅：优先官方“涨幅”，否则与前一个非空点作差 */
+function deltaAt(series, idx, key) {
+  const arr = series.data[key];
+  const cur = arr[idx];
+  if (cur === null || cur === undefined) return null;
+  if (key === "综合得分") {
+    const row = series.rows ? series.rows[idx] : null;
+    if (row && row.r && (row.r["涨幅"] || "").trim()) {
+      const v = parseFloat(row.r["涨幅"]);
+      if (!isNaN(v)) return v;
+    }
+  }
+  for (let j = idx - 1; j >= 0; j--) {
+    if (arr[j] !== null && arr[j] !== undefined) {
+      return cur - arr[j];
+    }
+  }
+  return null;
+}
+
+/* ---------- 折线图 ---------- */
+function renderLineChart() {
+  const series = lineTab === "daily" ? dailySeries() : weeklySeries();
+  const hint = lineTab === "daily" ? "日榜：每天 6:06 至次日 0:16" : "周榜：本周内，每天取 0:26 与最新一条";
+  document.getElementById("lineLegend").innerHTML =
+    LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("")
+    + `<br><span style="color:#bbb;font-size:11px;">${hint}</span>`;
+
+  if (!chartLine) chartLine = echarts.init(document.getElementById("chartLine"));
+
+  const seriesOpt = LINE_FIELDS.map(f => ({
+    name: f.label,
+    type: "line",
+    data: series.data[f.key],
+    smooth: false,
+    symbol: "circle",
+    symbolSize: 4,
+    connectNulls: false,
+    itemStyle: { color: f.color },
+    lineStyle: { width: 2, color: f.color },
+    emphasis: { focus: "series" }
   }));
 
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById("trend-chart"), {
-    type: "line",
-    data: { labels: series.labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: "top" } },
-      scales: { y: { beginAtZero: false } }
+  let min = Infinity, max = -Infinity;
+  Object.values(series.data).forEach(arr => arr.forEach(v => {
+    if (v !== null && v !== undefined && !isNaN(v)) {
+      if (v < min) min = v;
+      if (v > max) max = v;
     }
-  });
+  }));
+  let yMin, yMax;
+  if (!isFinite(min) || !isFinite(max)) {
+    yMin = 0; yMax = 100;
+  } else {
+    const pad = Math.max((max - min) * 0.1, 1);
+    yMin = Math.floor((min - pad) / 5) * 5;
+    yMax = Math.ceil((max + pad) / 5) * 5;
+    if (yMax > 100) yMax = 100;
+    if (yMax <= yMin) yMax = yMin + 5;
+    if (yMin < 0) yMin = 0;
+  }
+
+  chartLine.setOption({
+    tooltip: {
+      trigger: "axis",
+      confine: true,
+      formatter: function (params) {
+        if (!params.length) return "";
+        const i = params[0].dataIndex;
+        const label = series.labels[i];
+        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
+        const sorted = params.filter(p => p.value !== null && p.value !== undefined).sort((a, b) => b.value - a.value);
+        if (!sorted.length) {
+          html += `<div style="color:#999;">无数据</div>`;
+          return html;
+        }
+        sorted.forEach(p => {
+          const field = LINE_FIELDS.find(f => f.label === p.seriesName);
+          if (!field) return;
+          const d = deltaAt(series, i, field.key);
+          let deltaText = "-", deltaColor = "#999";
+          if (d !== null && !isNaN(d)) {
+            deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
+            deltaColor = d > 0 ? "#ea3690" : "#999";
+          }
+          html += `<div style="display:flex;align-items:center;gap:12px;min-width:230px;line-height:20px;">`
+            + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
+            + `<span>${p.marker}</span>`
+            + `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.seriesName}</span>`
+            + `<span style="margin-left:auto;font-weight:bold;color:#333;">${p.value}</span>`
+            + `</span>`
+            + `<span style="width:60px;text-align:right;white-space:nowrap;font-weight:bold;color:${deltaColor};">${deltaText}</span>`
+            + `</div>`;
+        });
+        return html;
+      }
+    },
+    grid: { left: "2%", right: "5%", bottom: "12%", top: "8%", containLabel: true },
+    xAxis: {
+      type: "category",
+      boundaryGap: false,
+      data: series.labels,
+      axisLabel: { interval: "auto", fontSize: 10, color: "#888", rotate: 45 },
+      axisLine: { lineStyle: { color: "#f0d6e4" } }
+    },
+    yAxis: {
+      type: "value",
+      min: yMin,
+      max: yMax,
+      minInterval: 1,
+      axisLabel: { fontSize: 10, color: "#888" },
+      axisLine: { lineStyle: { color: "#f0d6e4" } },
+      splitLine: { lineStyle: { color: "#faf0f6" } }
+    },
+    series: seriesOpt
+  }, true);
+  chartLine.resize();
 }
 
-document.getElementById("tab-daily").onclick = () => {
-  currentTab = "daily";
-  document.getElementById("tab-daily").classList.add("active");
-  document.getElementById("tab-weekly").classList.remove("active");
-  renderChart();
-};
-document.getElementById("tab-weekly").onclick = () => {
-  currentTab = "weekly";
-  document.getElementById("tab-weekly").classList.add("active");
-  document.getElementById("tab-daily").classList.remove("active");
-  renderChart();
-};
+/* ---------- 雷达图 ---------- */
+function renderRadarChart() {
+  const series = radarTab === "daily" ? dailySeries() : weeklySeries();
+  if (!chartRadar) chartRadar = echarts.init(document.getElementById("chartRadar"));
+  const last = series.last;
+  if (!last) {
+    chartRadar.setOption({
+      title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: "#999", fontSize: 14 } }
+    }, true);
+    document.getElementById("radarLegend").innerHTML = "";
+    return;
+  }
+  const dims = RADAR_METRICS.map(name => ({ name, key: name }));
+  const indicators = dims.map(d => ({ name: d.name, max: 100 }));
+  const value = dims.map(d => {
+    const v = parseFloat(last.r[d.key]);
+    return isNaN(v) ? 0 : v;
+  });
 
+  const hint = radarTab === "daily" ? "日榜最新一条的三维度" : "周榜最新一条的三维度";
+  document.getElementById("radarLegend").innerHTML =
+    `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`
+    + `<br><span style="color:#bbb;font-size:11px;">${hint}</span>`;
+
+  const lastIdx = series.labels.indexOf(fmtTime(last.dt));
+
+  chartRadar.setOption({
+    tooltip: {
+      trigger: "item",
+      confine: true,
+      formatter: function () {
+        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${fmtTime(last.dt)}</div>`;
+        dims.forEach(d => {
+          const val = last.r[d.key] || "-";
+          const dlt = lastIdx >= 0 ? deltaAt(series, lastIdx, d.key) : null;
+          let deltaText = "-", deltaColor = "#999";
+          if (dlt !== null && !isNaN(dlt)) {
+            deltaText = (dlt > 0 ? "+" : "") + dlt.toFixed(2);
+            deltaColor = dlt > 0 ? "#ea3690" : "#999";
+          }
+          html += `<div style="display:flex;align-items:center;gap:12px;min-width:230px;line-height:20px;">`
+            + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
+            + `<span style="color:#999;">${d.name}</span>`
+            + `<span style="margin-left:auto;font-weight:bold;color:#333;">${val}</span>`
+            + `</span>`
+            + `<span style="width:60px;text-align:right;white-space:nowrap;font-weight:bold;color:${deltaColor};">${deltaText}</span>`
+            + `</div>`;
+        });
+        return html;
+      }
+    },
+    radar: {
+      indicator: indicators,
+      center: ["50%", "55%"],
+      radius: "55%",
+      axisName: {
+        formatter: function (name) {
+          const idx = indicators.findIndex(x => x.name === name);
+          const v = idx >= 0 ? value[idx] : "";
+          return `{name|${name}}\n{value|${v}}`;
+        },
+        rich: {
+          name: { color: "#999", fontSize: 12, fontWeight: "normal", lineHeight: 18 },
+          value: { color: "#ea3690", fontSize: 13, fontWeight: "bold", lineHeight: 18 }
+        }
+      },
+      splitLine: { lineStyle: { color: "#f0d6e4" } },
+      splitArea: { areaStyle: { color: ["#fdf7fa", "#ffffff"] } },
+      axisLine: { lineStyle: { color: "#f0d6e4" } }
+    },
+    series: [{
+      type: "radar",
+      data: [{
+        value,
+        name: "最新",
+        areaStyle: { color: "rgba(234,54,144,0.25)" },
+        lineStyle: { color: "#ea3690", width: 2 },
+        itemStyle: { color: "#ea3690" }
+      }]
+    }]
+  }, true);
+  chartRadar.resize();
+}
+
+/* ---------- Tab ---------- */
+document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    lineTab = this.dataset.range;
+    renderLineChart();
+  });
+});
+document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    radarTab = this.dataset.range;
+    renderRadarChart();
+  });
+});
+
+/* ---------- 加载 ---------- */
 async function load() {
   const [d, w] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
@@ -236,10 +587,40 @@ async function load() {
   ]);
   dailyRows = d ? parseCSV(d) : [];
   weeklyRows = w ? parseCSV(w) : [];
+
+  const all = [...dailyRows, ...weeklyRows]
+    .map(r => parseTime(r["时间"]))
+    .filter(Boolean)
+    .sort((a, b) => b - a);
+  document.getElementById("update-time").textContent =
+    all.length ? `最近更新：${fmtTime(all[0])}` : "暂无数据";
+
   renderTable();
-  renderChart();
+  renderLineChart();
+  renderRadarChart();
 }
 load();
+
+let resizeTimer;
+window.addEventListener("resize", function () {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    if (chartLine) chartLine.resize();
+    if (chartRadar) chartRadar.resize();
+  }, 200);
+});
 </script>
+<div id="global-watermark"></div>
+<style>
+#global-watermark {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 99999;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'><text x='20' y='70' font-size='28' font-weight='900' fill='rgba(234,54,144,0.06)' transform='rotate(-25 100 60)'>mzc051</text></svg>");
+    background-repeat: repeat;
+    background-size: 200px 120px;
+}
+</style>
 </body>
 </html>
