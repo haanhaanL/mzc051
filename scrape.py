@@ -1,4 +1,4 @@
-import csv, os
+import csv, os, re
 from datetime import datetime, timezone, timedelta
 import httpx
 
@@ -98,6 +98,173 @@ def save(path, row):
     print("写入", path, row["榜单"], row["综合得分"], score_change)
 
 
+# ========== 自动生成 combined_06.csv ==========
+COMBINED_06 = "combined_06.csv"
+COMBINED_06_COLS = COLS
+
+
+def _parse_time(s):
+    m = re.search(r"(\d{4})/(\d{2})/(\d{2})\s+(\d{1,2}):(\d{2})", s or "")
+    if not m:
+        return None
+    return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                    int(m.group(4)), int(m.group(5)))
+
+
+def _read_rows(path):
+    if not os.path.exists(path):
+        return []
+    with open(path, "r", encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    for r in rows:
+        r["_dt"] = _parse_time(r.get("时间", ""))
+    return [r for r in rows if r["_dt"]]
+
+
+def _to_float(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _delta(cur, prev):
+    a = _to_float(cur)
+    b = _to_float(prev)
+    if a is None or b is None:
+        return ""
+    return f"{a - b:.2f}"
+
+
+def _is_monday_026(dt):
+    return dt.weekday() == 0 and dt.hour == 0 and dt.minute == 26
+
+
+def _is_monday_106(dt):
+    return dt.weekday() == 0 and dt.hour == 1 and dt.minute == 6
+
+
+def _is_six_six(dt):
+    return dt.hour == 6 and dt.minute == 6
+
+
+def _build_daily_06(rows):
+    """日榜：只取 06 分，6:06 读官方涨幅，其余与前一条 06 分作差"""
+    rows = sorted([r for r in rows if r["_dt"].minute == 6], key=lambda r: r["_dt"])
+    out = []
+    prev = None
+    for r in rows:
+        dt = r["_dt"]
+        rec = {c: r.get(c, "") for c in COMBINED_06_COLS}
+        rec["时间"] = r.get("时间", "")
+        rec["榜单"] = "日榜"
+
+        if _is_six_six(dt):
+            rec["涨幅"] = r.get("涨幅", "")
+            for d in DIMS:
+                rec[f"{d}涨幅"] = r.get(f"{d}涨幅", "")
+        else:
+            if prev is None:
+                rec["涨幅"] = ""
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = ""
+            else:
+                rec["涨幅"] = _delta(r.get("综合得分"), prev.get("综合得分"))
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = _delta(r.get(d), prev.get(d))
+
+        out.append(rec)
+        prev = r
+    return out
+
+
+def _build_weekly_06(rows):
+    """
+    周榜：只取 06 分。
+    周一 1:06 与周一 0:26 作差（0:26 从 weekly.csv 找，不进入输出）。
+    其余 06 分与前一条 06 分作差。
+    """
+    rows_all = sorted(rows, key=lambda r: r["_dt"])
+    rows_06 = [r for r in rows_all if r["_dt"].minute == 6]
+
+    monday_026 = {}
+    for r in rows_all:
+        if _is_monday_026(r["_dt"]):
+            monday_026[r["_dt"].date()] = r
+
+    out = []
+    prev = None
+    for r in rows_06:
+        dt = r["_dt"]
+        rec = {c: r.get(c, "") for c in COMBINED_06_COLS}
+        rec["时间"] = r.get("时间", "")
+        rec["榜单"] = "周榜"
+
+        if _is_monday_106(dt):
+            base = monday_026.get(dt.date())
+            if base:
+                rec["涨幅"] = _delta(r.get("综合得分"), base.get("综合得分"))
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = _delta(r.get(d), base.get(d))
+            else:
+                rec["涨幅"] = r.get("涨幅", "")
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = r.get(f"{d}涨幅", "")
+        else:
+            if prev is None:
+                rec["涨幅"] = ""
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = ""
+            else:
+                rec["涨幅"] = _delta(r.get("综合得分"), prev.get("综合得分"))
+                for d in DIMS:
+                    rec[f"{d}涨幅"] = _delta(r.get(d), prev.get(d))
+
+        out.append(rec)
+        prev = r
+    return out
+
+
+def export_combined_06():
+    daily_rows = _read_rows("daily.csv")
+    weekly_rows = _read_rows("weekly.csv")
+
+    daily_06 = _build_daily_06(daily_rows)
+    weekly_06 = _build_weekly_06(weekly_rows)
+
+    by_time = {}
+    for rec in daily_06:
+        by_time.setdefault(rec["时间"], {})["日榜"] = rec
+    for rec in weekly_06:
+        by_time.setdefault(rec["时间"], {})["周榜"] = rec
+
+    merged = []
+    for key in sorted(by_time.keys(), key=lambda k: _parse_time(k) or datetime.min):
+        group = by_time[key]
+        if "日榜" in group:
+            merged.append(group["日榜"])
+        if "周榜" in group:
+            merged.append(group["周榜"])
+
+    with open(COMBINED_06, "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=COMBINED_06_COLS, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(merged)
+
+    print(f"写入 {COMBINED_06}，共 {len(merged)} 行（日榜 {len(daily_06)} 条，周榜 {len(weekly_06)} 条）")
+
+
+# ========== 主流程 ==========
 with httpx.Client(headers=HEAD, timeout=20) as c:
     save("daily.csv", get_daily(c))
     save("weekly.csv", get_weekly(c))
+
+# 只有当前是 06 分才重新生成 combined_06.csv
+try:
+    now = datetime.now(BJ)
+    if now.minute == 6:
+        export_combined_06()
+    else:
+        print(f"当前 {now.strftime('%H:%M')}，非 06 分，跳过 combined_06.csv 生成")
+except Exception as e:
+    print("combined_06.csv 生成失败：", e)
