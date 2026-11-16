@@ -55,6 +55,25 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .title { text-align: center; color: #ea3690; font-size: 15px; font-weight: bold; margin: 5px 0 8px 0; }
 
+/* 表格卡片标题行：标题 + 右侧切换 */
+.table-card .title-row {
+    display: flex; align-items: center; justify-content: center;
+    position: relative; margin: 5px 0 8px 0; padding: 0 12px;
+}
+.table-card .title-row .title {
+    margin: 0; text-align: center; flex: 1 1 auto;
+}
+.table-card .title-row .mode-tabs {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 6px;
+}
+.table-card .title-row .mode-btn {
+    border: 1px solid rgba(234,54,144,0.35); background: white; color: #ea3690;
+    font-size: 11px; padding: 2px 10px; border-radius: 12px;
+    cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
+}
+.table-card .title-row .mode-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
+
 .table-scroll-box {
     width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
     flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
@@ -90,14 +109,22 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table thead th.col-type-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table td.time-cell { vertical-align: middle; }
 
-/* 两张表 tbody 单行统一高度：微博表单行 = 日/周榜每个小行 */
-#data-table tbody td,
-#weibo-table tbody td {
+#data-table tbody td {
     height: 32px;
     line-height: 20px;
     padding-top: 0;
     padding-bottom: 0;
     vertical-align: middle;
+}
+
+#weibo-table tbody tr { height: 32px; }
+#weibo-table tbody td {
+    height: 32px !important;
+    line-height: 32px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    vertical-align: middle;
+    box-sizing: border-box;
 }
 
 .recent-table tbody tr.row-daily td,
@@ -148,7 +175,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
 .page-grid { display: flex; flex-direction: column; gap: 12px; }
 
-/* 两张表并排 */
 .tables-row { display: flex; gap: 12px; width: 100%; align-items: stretch; }
 .tables-row .table-card {
     flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; max-height: 620px;
@@ -181,12 +207,20 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .recent-table th.col-type-sticky,
     .recent-table td.type-cell { left: 76px; }
 
-    /* 移动端单行高度稍小 */
-    #data-table tbody td,
-    #weibo-table tbody td {
+    #data-table tbody td {
         height: 28px;
         line-height: 18px;
     }
+
+    #weibo-table tbody tr { height: 28px; }
+    #weibo-table tbody td {
+        height: 28px !important;
+        line-height: 28px !important;
+    }
+
+    .table-card .title-row { justify-content: flex-start; }
+    .table-card .title-row .title { text-align: left; }
+    .table-card .title-row .mode-tabs { position: static; transform: none; margin-left: auto; }
 }
 
 #global-watermark {
@@ -196,7 +230,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     background-repeat: repeat; background-size: 200px 120px;
 }
 
-/* 微博表：指标中性色 */
 #weibo-table tbody tr td { color: #333; }
 #weibo-table tbody tr td.time-cell { color: #555; }
 </style>
@@ -210,7 +243,13 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
   <div class="page-grid">
     <div class="tables-row">
       <div class="card table-card">
-        <div class="title">由你-周/日榜 · 最近 12 条</div>
+        <div class="title-row">
+          <div class="title" id="dataTableTitle">由你-周/日榜 · 最近 12 条</div>
+          <div class="mode-tabs" id="modeTabs">
+            <button class="mode-btn active" data-mode="official">官方</button>
+            <button class="mode-btn" data-mode="hourly">每小时</button>
+          </div>
+        </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="data-table">
             <colgroup>
@@ -236,7 +275,9 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       </div>
 
       <div class="card table-card">
-        <div class="title">微博话题 · 最近 24 条</div>
+        <div class="title-row">
+          <div class="title">微博话题 · 最近 24 条</div>
+        </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="weibo-table">
             <colgroup>
@@ -291,6 +332,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
 const WEIBO_CSV = "weibo_trend.csv";
+const HOURLY_CSV = "combined_06.csv";
 const WEIBO_FIELDS = ["阅读量", "讨论量", "互动量", "原创量"];
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
 const RADAR_METRICS = ["推荐度", "畅销度", "播放热度"];
@@ -307,12 +349,14 @@ const TABLE_FIELDS = [
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
 
-let dailyRows = [], weeklyRows = [], weiboRows = [];
+let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
 let lineTab = "weekly", radarTab = "weekly";
 let chartLine = null, chartRadar = null;
+let tableMode = "official"; // official | hourly
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
+  if (!lines.length) return [];
   const header = lines[0].split(",").map(s => s.replace(/^\uFEFF/, "").trim());
   return lines.slice(1).filter(Boolean).map(line => {
     const cells = line.split(",");
@@ -354,7 +398,6 @@ function computeHeadlineDeltas() {
   const dailyDimDeltas = { "播放热度": "-", "畅销度": "-", "推荐度": "-" };
   const weeklyDimDeltas = { "播放热度": "-", "畅销度": "-", "推荐度": "-" };
   const DIMS = ["播放热度", "畅销度", "推荐度"];
-
   const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 
   const dGroups = new Map();
@@ -395,7 +438,6 @@ function computeHeadlineDeltas() {
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
     const weekKey = dateKey(d);
-
     let monday026 = null;
     for (const r of weeklyRows) {
       const dt = parseTime(r["时间"]);
@@ -416,7 +458,6 @@ function computeHeadlineDeltas() {
       });
     }
   }
-
   return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas };
 }
 
@@ -424,9 +465,7 @@ function renderHeadlineDeltas() {
   const { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
   const el = document.getElementById("headlineDeltas");
   if (!el) return;
-
   const DIMS = ["播放热度", "畅销度", "推荐度"];
-
   const fmtOne = v => {
     if (v === "-" || v == null || v === "") return "-";
     const n = parseFloat(v);
@@ -437,7 +476,6 @@ function renderHeadlineDeltas() {
     const n = parseFloat(v);
     return isNaN(n) ? "flat" : (n > 0 ? "up" : (n < 0 ? "down" : "flat"));
   };
-
   const buildLine = (label, total, dims, typeCls) => {
     const dimsHtml = DIMS.map(d =>
       `<span class="delta-dim ${clsOne(dims[d])}">${fmtOne(dims[d])}</span>`
@@ -449,7 +487,6 @@ function renderHeadlineDeltas() {
       + dimsHtml
       + `</div>`;
   };
-
   el.innerHTML =
     `<div class="delta-box">`
     + `<div class="delta-head">`
@@ -466,25 +503,52 @@ function renderHeadlineDeltas() {
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
+  const titleEl = document.getElementById("dataTableTitle");
+  if (titleEl) {
+    titleEl.textContent = tableMode === "hourly"
+      ? "由你-每小时 06 分 · 最近 12 组"
+      : "由你-周/日榜 · 最近 12 条";
+  }
 
-  const sortAsc = rows => rows
-    .filter(r => parseTime(r["时间"]))
-    .sort((a, b) => parseTime(a["时间"]) - parseTime(b["时间"]));
-
-  const dailyAsc = sortAsc(dailyRows);
-  const weeklyAsc = sortAsc(weeklyRows);
-
-  const addChanges = (rows) => rows.map(r => {
-    const changes = {};
-    TABLE_FIELDS.forEach(f => {
-      changes[f.key] = (r[f.changeKey] || "").trim();
+  if (tableMode === "hourly") {
+    const rows = hourlyRows
+      .map(r => ({ ...r, _dt: parseTime(r["时间"]), _type: r["榜单"] || "" }))
+      .filter(r => r._dt);
+    if (!rows.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
+      return;
+    }
+    const byTime = new Map();
+    for (const r of rows) {
+      const key = fmtTime(r._dt);
+      if (!byTime.has(key)) byTime.set(key, { dt: r._dt, 日榜: null, 周榜: null });
+      const g = byTime.get(key);
+      if (r._type === "日榜") g["日榜"] = r;
+      else if (r._type === "周榜") g["周榜"] = r;
+    }
+    const keys = [...byTime.keys()]
+      .sort((a, b) => byTime.get(b).dt - byTime.get(a).dt)
+      .slice(0, 12);
+    keys.forEach((key, idx) => {
+      const g = byTime.get(key);
+      const altCls = idx % 2 === 1 ? " row-group-alt" : "";
+      const trDaily = document.createElement("tr");
+      trDaily.className = "row-daily" + altCls;
+      trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
+        + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
+        + renderCellsFromCombined(g["日榜"]);
+      tbody.appendChild(trDaily);
+      const trWeekly = document.createElement("tr");
+      trWeekly.className = "row-weekly" + altCls;
+      trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
+        + renderCellsFromCombined(g["周榜"]);
+      tbody.appendChild(trWeekly);
     });
-    return { ...r, _changes: changes, _dt: parseTime(r["时间"]) };
-  });
+    return;
+  }
 
-  const daily = addChanges(dailyAsc).map(r => ({ ...r, _type: "日榜" }));
-  const weekly = addChanges(weeklyAsc).map(r => ({ ...r, _type: "周榜" }));
-
+  const daily = dailyRows.map(r => ({ ...r, _type: "日榜", _dt: parseTime(r["时间"]) })).filter(r => r._dt);
+  const weekly = weeklyRows.map(r => ({ ...r, _type: "周榜", _dt: parseTime(r["时间"]) })).filter(r => r._dt);
   const map = new Map();
   for (const r of [...daily, ...weekly]) {
     const key = fmtTime(r._dt);
@@ -494,63 +558,74 @@ function renderTable() {
   const keys = [...map.keys()]
     .sort((a, b) => map.get(b).dt - map.get(a).dt)
     .slice(0, 12);
-
   if (!keys.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
     return;
   }
-
   const renderCells = (group, type) => {
     const r = group[type];
     return TABLE_FIELDS.map(f => {
       if (!r) return `<td>-</td>`;
       const val = r[f.key] || "-";
-      const change = r._changes[f.key] || "";
+      const change = (r[f.changeKey] || "").trim();
       let changeText = "-", cls = "flat";
-      if (change) {
+      if (change && change !== "-") {
         const num = parseFloat(change);
-        changeText = (num > 0 ? "+" : "") + change;
-        cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
+        if (!isNaN(num)) {
+          changeText = (num > 0 ? "+" : "") + change;
+          cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
+        }
       }
       return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
     }).join("");
   };
-
   keys.forEach((key, idx) => {
     const group = map.get(key);
     const altCls = idx % 2 === 1 ? " row-group-alt" : "";
-
     const trDaily = document.createElement("tr");
     trDaily.className = "row-daily" + altCls;
     trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
       + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
-      + `${renderCells(group, "日榜")}`;
+      + renderCells(group, "日榜");
     tbody.appendChild(trDaily);
-
     const trWeekly = document.createElement("tr");
     trWeekly.className = "row-weekly" + altCls;
     trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
-      + `${renderCells(group, "周榜")}`;
+      + renderCells(group, "周榜");
     tbody.appendChild(trWeekly);
   });
+}
+
+function renderCellsFromCombined(r) {
+  return TABLE_FIELDS.map(f => {
+    if (!r) return `<td>-</td>`;
+    const val = r[f.key] || "-";
+    const change = (r[f.changeKey] || "").trim();
+    let changeText = "-", cls = "flat";
+    if (change && change !== "-") {
+      const num = parseFloat(change);
+      if (!isNaN(num)) {
+        changeText = (num > 0 ? "+" : "") + change;
+        cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
+      }
+    }
+    return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
+  }).join("");
 }
 
 function renderWeiboTable() {
   const tbody = document.querySelector("#weibo-table tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-
   const rows = weiboRows
     .map(r => ({ ...r, _dt: parseTime(r["时间"]) }))
     .filter(r => r._dt)
     .sort((a, b) => b._dt - a._dt)
     .slice(0, 24);
-
   if (!rows.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据</td></tr>';
     return;
   }
-
   rows.forEach((r, idx) => {
     const tr = document.createElement("tr");
     tr.className = "row-weekly" + (idx % 2 === 1 ? " row-group-alt" : "");
@@ -573,11 +648,9 @@ function dailySeries() {
   const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const labels = [], axisLabels = [];
   let lastDay = null;
-
   const fullSlots = [];
   for (let h = 6; h <= 23; h++) fullSlots.push(`${String(h).padStart(2, "0")}:06`);
   fullSlots.push("00:16");
-
   const bySlot = new Map();
   for (const k of keys) {
     const list = groups.get(k)
@@ -592,37 +665,30 @@ function dailySeries() {
       if (!bySlot.has(slot)) bySlot.set(slot, { dt, r });
     }
   }
-
   for (const slot of fullSlots) {
     labels.push(slot);
     axisLabels.push(slot);
     const hit = bySlot.get(slot);
     for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
   }
-
   return { labels, axisLabels, data, last: pickLast(groups), lastDay };
 }
 
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
-
   const list = weeklyRows
     .map(r => ({ dt: parseTime(r["时间"]), r }))
     .filter(x => x.dt && businessWeek(x.dt) === weekKey)
     .sort((a, b) => a.dt - b.dt);
-
   const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const labels = [], axisLabels = [];
-
   const monday = new Date(now);
   const day = monday.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   monday.setDate(monday.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
-
   const pickHours = [0, 4, 8, 12, 16, 20];
-
   const byDayHour = new Map();
   for (const { dt, r } of list) {
     const dk = dateKey(dt);
@@ -632,7 +698,6 @@ function weeklySeries() {
     if (!byDayHour.has(dk)) byDayHour.set(dk, new Map());
     byDayHour.get(dk).set(h, { dt, r });
   }
-
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
@@ -640,7 +705,6 @@ function weeklySeries() {
     const dk = dateKey(d);
     const dayLabel = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
     const hourMap = byDayHour.get(dk);
-
     for (let j = 0; j < pickHours.length; j++) {
       const h = pickHours[j];
       labels.push(`${dayLabel} ${p(h)}:26`);
@@ -649,7 +713,6 @@ function weeklySeries() {
       for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
     }
   }
-
   const lastItem = list.length ? list[list.length - 1] : null;
   return { labels, axisLabels, data, last: lastItem };
 }
@@ -897,17 +960,28 @@ document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').for
   });
 });
 
+document.querySelectorAll('#modeTabs .mode-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    tableMode = this.dataset.mode;
+    renderTable();
+  });
+});
+
 async function load() {
-  const [d, w, wb] = await Promise.all([
+  const [d, w, wb, h] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
     fetch(WEEKLY_CSV).then(r => r.text()).catch(() => ""),
-    fetch(WEIBO_CSV).then(r => r.text()).catch(() => "")
+    fetch(WEIBO_CSV).then(r => r.text()).catch(() => ""),
+    fetch(HOURLY_CSV).then(r => r.text()).catch(() => "")
   ]);
   dailyRows = d ? parseCSV(d) : [];
   weeklyRows = w ? parseCSV(w) : [];
   weiboRows = wb ? parseCSV(wb) : [];
+  hourlyRows = h ? parseCSV(h) : [];
 
-  const all = [...dailyRows, ...weeklyRows, ...weiboRows]
+  const all = [...dailyRows, ...weeklyRows, ...weiboRows, ...hourlyRows]
     .map(r => parseTime(r["时间"]))
     .filter(Boolean)
     .sort((a, b) => b - a);
