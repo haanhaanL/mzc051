@@ -53,11 +53,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table col.col-time { width: 130px; }
 .recent-table col.col-metric { width: auto; }
 
-/* 日榜行 / 周榜行区分 */
-.recent-table tr.row-daily td { background-color: #fff8e8; }
-.recent-table tr.row-weekly td { background-color: #eef5ff; }
-
-/* 时间列 rowspan 合并后垂直居中 */
+/* 时间列 rowspan 合并后垂直居中，白底 */
 .recent-table td.time-cell {
     vertical-align: middle;
     font-weight: bold;
@@ -65,9 +61,11 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     background-color: #ffffff !important;
 }
 
-/* 覆盖原来的偶数行斑马纹，避免打乱“两行一组”的结构 */
-.recent-table tbody tr:nth-child(even) { background-color: transparent; }
-.recent-table tbody tr:nth-child(even) td:first-child { background-color: #ffffff; }
+/* 两行一组：日榜行白底、周榜行浅粉底 */
+.recent-table tbody tr.row-daily { background-color: #ffffff; }
+.recent-table tbody tr.row-weekly { background-color: #fdf7fa; }
+.recent-table tbody tr.row-daily td:first-child { background-color: #ffffff; }
+.recent-table tbody tr.row-weekly td:first-child { background-color: #fdf7fa; }
 
 .range-tabs { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px 0; }
 .range-btn {
@@ -89,7 +87,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .type-tag.daily { background: #fff4e5; color: #fa8c16; }
 .empty-row td { color: #999; padding: 30px 0; }
 
-/* 单元格：分数 / 涨幅 */
 .cell-main { font-weight: bold; color: #333; }
 .cell-change { font-size: 11px; margin-left: 1px; }
 .cell-change.up { color: #ea3690; }
@@ -100,7 +97,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .table-card { display: flex; flex-direction: column; max-height: 620px; }
 .table-card .table-scroll-box { flex: 1 1 auto; min-height: 0; }
 
-/* 两个图表同一行 */
 .charts-row { display: flex; gap: 12px; width: 100%; }
 .chart-card {
     flex: 1 1 50%; min-width: 0; height: 460px;
@@ -113,7 +109,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .chart-card { flex: 1 1 100%; height: 380px; }
 }
 
-/* 全局水印 */
 #global-watermark {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -303,13 +298,11 @@ function renderTable() {
   for (const key of keys) {
     const group = map.get(key);
 
-    // 第一行：时间（rowspan=2）+ 日榜
     const trDaily = document.createElement("tr");
     trDaily.className = "row-daily";
     trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>${renderCells(group, "日榜")}`;
     tbody.appendChild(trDaily);
 
-    // 第二行：周榜
     const trWeekly = document.createElement("tr");
     trWeekly.className = "row-weekly";
     trWeekly.innerHTML = renderCells(group, "周榜");
