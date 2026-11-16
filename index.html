@@ -50,12 +50,24 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     position: sticky; left: 0; z-index: 1; color: #555; background-color: #ffffff;
     width: 130px; min-width: 130px; max-width: 130px;
 }
-.recent-table tbody tr:nth-child(even) td:first-child { background-color: #fdf7fa; }
-.recent-table tbody tr:nth-child(even) { background-color: #ea36900a; }
-
-/* 表格列宽：时间固定 130px，其余均分 */
 .recent-table col.col-time { width: 130px; }
 .recent-table col.col-metric { width: auto; }
+
+/* 日榜行 / 周榜行区分 */
+.recent-table tr.row-daily td { background-color: #fff8e8; }
+.recent-table tr.row-weekly td { background-color: #eef5ff; }
+
+/* 时间列 rowspan 合并后垂直居中 */
+.recent-table td.time-cell {
+    vertical-align: middle;
+    font-weight: bold;
+    color: #555;
+    background-color: #ffffff !important;
+}
+
+/* 覆盖原来的偶数行斑马纹，避免打乱“两行一组”的结构 */
+.recent-table tbody tr:nth-child(even) { background-color: transparent; }
+.recent-table tbody tr:nth-child(even) td:first-child { background-color: #ffffff; }
 
 .range-tabs { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px 0; }
 .range-btn {
@@ -99,6 +111,17 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 @media (max-width: 900px) {
     .charts-row { flex-wrap: wrap; }
     .chart-card { flex: 1 1 100%; height: 380px; }
+}
+
+/* 全局水印 */
+#global-watermark {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 99999;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'><text x='20' y='70' font-size='28' font-weight='900' fill='rgba(234,54,144,0.06)' transform='rotate(-25 100 60)'>mzc051</text></svg>");
+    background-repeat: repeat;
+    background-size: 200px 120px;
 }
 </style>
 </head>
@@ -157,6 +180,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
   </div>
 </div>
 
+<div id="global-watermark"></div>
+
 <script>
 const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
@@ -168,7 +193,6 @@ const LINE_FIELDS = [
   { key: "畅销度", label: "畅销度", color: "#f97316" },
   { key: "推荐度", label: "推荐度", color: "#00c853" }
 ];
-// 表格四列对应的字段与涨幅字段
 const TABLE_FIELDS = [
   { key: "综合得分", changeKey: "涨幅" },
   { key: "播放热度", changeKey: "" },
@@ -213,7 +237,7 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
-/* ---------- 表格 ---------- */
+/* ---------- 表格：时间列 rowspan=2，日榜在上、周榜在下 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -225,13 +249,11 @@ function renderTable() {
   const dailyAsc = sortAsc(dailyRows);
   const weeklyAsc = sortAsc(weeklyRows);
 
-  // 为每条记录计算四个维度的涨幅
   const addChanges = (rows) => rows.map((r, i) => {
     const prev = i > 0 ? rows[i - 1] : null;
     const changes = {};
     TABLE_FIELDS.forEach(f => {
       let change = "";
-      // 官方涨幅字段（只有综合得分有“涨幅”列）
       if (f.changeKey && (r[f.changeKey] || "").trim()) {
         change = (r[f.changeKey] || "").trim();
       } else if (prev) {
@@ -241,7 +263,7 @@ function renderTable() {
       }
       changes[f.key] = change;
     });
-    return { ...r, _changes: changes, _dt: parseTime(r["时间"]), _type: "" };
+    return { ...r, _changes: changes, _dt: parseTime(r["时间"]) };
   });
 
   const daily = addChanges(dailyAsc).map(r => ({ ...r, _type: "日榜" }));
@@ -262,31 +284,36 @@ function renderTable() {
     return;
   }
 
+  const renderCells = (group, type) => {
+    const r = group[type];
+    return TABLE_FIELDS.map(f => {
+      if (!r) return `<td>-</td>`;
+      const val = r[f.key] || "-";
+      const change = r._changes[f.key] || "";
+      let changeText = "-", cls = "flat";
+      if (change) {
+        const num = parseFloat(change);
+        changeText = (num > 0 ? "+" : "") + change;
+        cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
+      }
+      return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
+    }).join("");
+  };
+
   for (const key of keys) {
     const group = map.get(key);
-    for (const type of ["周榜", "日榜"]) {
-      const r = group[type];
-      const tr = document.createElement("tr");
-      const tagCls = type === "周榜" ? "weekly" : "daily";
-      const tag = `<span class="type-tag ${tagCls}">${type}</span>`;
-      if (!r) {
-        tr.innerHTML = `<td>${key} ${tag}</td><td colspan="4">无数据</td>`;
-      } else {
-        const cells = TABLE_FIELDS.map(f => {
-          const val = r[f.key] || "-";
-          const change = r._changes[f.key] || "";
-          let changeText = "-", cls = "flat";
-          if (change) {
-            const num = parseFloat(change);
-            changeText = (num > 0 ? "+" : "") + change;
-            cls = num > 0 ? "up" : (num < 0 ? "down" : "flat");
-          }
-          return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
-        }).join("");
-        tr.innerHTML = `<td>${key} ${tag}</td>${cells}`;
-      }
-      tbody.appendChild(tr);
-    }
+
+    // 第一行：时间（rowspan=2）+ 日榜
+    const trDaily = document.createElement("tr");
+    trDaily.className = "row-daily";
+    trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>${renderCells(group, "日榜")}`;
+    tbody.appendChild(trDaily);
+
+    // 第二行：周榜
+    const trWeekly = document.createElement("tr");
+    trWeekly.className = "row-weekly";
+    trWeekly.innerHTML = renderCells(group, "周榜");
+    tbody.appendChild(trWeekly);
   }
 }
 
@@ -358,7 +385,6 @@ function pickLast(groups) {
   return latest;
 }
 
-/* 折线图 tooltip 的涨幅：优先官方“涨幅”，否则与前一个非空点作差 */
 function deltaAt(series, idx, key) {
   const arr = series.data[key];
   const cur = arr[idx];
@@ -610,17 +636,5 @@ window.addEventListener("resize", function () {
   }, 200);
 });
 </script>
-<div id="global-watermark"></div>
-<style>
-#global-watermark {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    pointer-events: none;
-    z-index: 99999;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'><text x='20' y='70' font-size='28' font-weight='900' fill='rgba(234,54,144,0.06)' transform='rotate(-25 100 60)'>mzc051</text></svg>");
-    background-repeat: repeat;
-    background-size: 200px 120px;
-}
-</style>
 </body>
 </html>
