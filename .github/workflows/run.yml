@@ -1,10 +1,12 @@
 name: run-once
 on:
-  workflow_dispatch:   # 只手动触发，不定时
+  workflow_dispatch:   # 只手动触发
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # 允许 push
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -12,9 +14,10 @@ jobs:
           python-version: '3.11'
       - run: pip install -r requirements.txt
       - run: python scrape.py
-      - name: show result
+      - name: commit csv
         run: |
-          echo "===== daily.csv ====="
-          cat daily.csv
-          echo "===== weekly.csv ====="
-          cat weekly.csv
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add daily.csv weekly.csv
+          git commit -m "update csv $(date -u +%Y%m%d%H%M)" || true
+          git push
