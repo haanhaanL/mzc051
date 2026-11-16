@@ -14,8 +14,7 @@ PARAMS = {"q": "#穆祉丞生日单曲阴天也会有烦恼吗#", "version": "v1
 
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weibo_trend.csv")
 
-BASE_FIELDS = ["时间", "阅读量", "讨论量", "互动量", "原创量"]
-FIELDS = BASE_FIELDS + ["阅读量_修正", "讨论量_修正", "互动量_修正", "原创量_修正"]
+FIELDS = ["时间", "阅读量", "讨论量", "互动量", "原创量"]
 
 METRIC_MAP = {
     "read": "阅读量",
@@ -76,31 +75,16 @@ def load_existing(filename):
         return {}
     existing = {}
     with open(filename, "r", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        if reader.fieldnames and reader.fieldnames[0] != "时间":
-            # 无表头旧文件，按列位置映射，且同时间只留第一条
-            f.seek(0)
-            for row in csv.reader(f):
-                if len(row) >= 5 and row[0]:
-                    t = row[0]
-                    if t in existing:
-                        continue
-                    existing[t] = {
-                        "时间": t,
-                        "阅读量": row[1] if len(row) > 1 else "",
-                        "讨论量": row[2] if len(row) > 2 else "",
-                        "互动量": row[3] if len(row) > 3 else "",
-                        "原创量": row[4] if len(row) > 4 else "",
-                        "阅读量_修正": row[5] if len(row) > 5 else "",
-                        "讨论量_修正": row[6] if len(row) > 6 else "",
-                        "互动量_修正": row[7] if len(row) > 7 else "",
-                        "原创量_修正": row[8] if len(row) > 8 else "",
-                    }
-        else:
-            for row in reader:
-                t = row.get("时间")
-                if t and t not in existing:
-                    existing[t] = row  # 同时间保留第一条（首次值优先）
+        for row in csv.DictReader(f):
+            t = row.get("时间")
+            if t and t not in existing:
+                existing[t] = {
+                    "时间": t,
+                    "阅读量": row.get("阅读量", ""),
+                    "讨论量": row.get("讨论量", ""),
+                    "互动量": row.get("互动量", ""),
+                    "原创量": row.get("原创量", ""),
+                }
     return existing
 
 
@@ -113,7 +97,7 @@ def parse_trend(data, now=None):
                 continue
             full_time = resolve_date(t, now)
             if full_time not in merged:
-                merged[full_time] = {f: "" for f in BASE_FIELDS}
+                merged[full_time] = {f: "" for f in FIELDS}
                 merged[full_time]["时间"] = full_time
             merged[full_time][col] = item.get("value", "")
     return [merged[t] for t in sorted(merged.keys())]
@@ -121,13 +105,13 @@ def parse_trend(data, now=None):
 
 def upsert_rows(rows, filename=CSV_FILE):
     """
-    首次值优先：时间不存在 -> 新增；时间已存在 -> 完全忽略本次值，不更新、不写修正。
-    同时保证文件开头一定有表头。
+    首次值优先：时间不存在 -> 新增；时间已存在 -> 忽略。
+    保证文件开头有表头。
     """
     existing = load_existing(filename)
     new_rows = []
 
-    # 本次抓取内部也按时间去重，同时间保留第一次出现
+    # 本次抓取内部按时间去重，同时间保留第一次出现
     seen = set()
     for r in rows:
         t = r["时间"]
@@ -135,11 +119,8 @@ def upsert_rows(rows, filename=CSV_FILE):
             continue
         seen.add(t)
         if t in existing:
-            # 时间已存在 -> 首次值优先，忽略后续变化
-            continue
-        full = {f: "" for f in FIELDS}
-        full.update(r)
-        new_rows.append(full)
+            continue  # 首次值优先，忽略后续变化
+        new_rows.append({f: r.get(f, "") for f in FIELDS})
 
     # 判断是否需要补表头：文件不存在 / 为空 / 第一行不是表头
     need_header = True
@@ -149,7 +130,6 @@ def upsert_rows(rows, filename=CSV_FILE):
         need_header = first_line != ",".join(FIELDS)
 
     if need_header:
-        # 重写整个文件，补表头，保留已有行 + 新增行
         all_rows = list(existing.values()) + new_rows
         all_rows.sort(key=lambda x: x["时间"])
         with open(filename, "w", newline="", encoding="utf-8-sig") as f:
@@ -161,9 +141,10 @@ def upsert_rows(rows, filename=CSV_FILE):
             writer = csv.DictWriter(f, fieldnames=FIELDS)
             writer.writerows(new_rows)
 
-    print(f"新增 {len(new_rows)} 行，忽略已存在时间点 {len(rows) - len(new_rows)} 个")
+    ignored = len(seen) - len(new_rows)
+    print(f"新增 {len(new_rows)} 行，忽略已存在时间点 {ignored} 个")
     print(f"CSV 文件路径: {filename}")
-    return len(new_rows), 0
+    return len(new_rows), ignored
 
 
 # ============================================================
