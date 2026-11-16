@@ -246,8 +246,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
         <div class="title-row">
           <div class="title" id="dataTableTitle">由你榜-官方CD · 最近 12 条</div>
           <div class="mode-tabs" id="modeTabs">
-            <button class="mode-btn active" data-mode="hourly">每小时</button>
-            <button class="mode-btn" data-mode="official">官方</button>
+            <button class="mode-btn active" data-mode="official">官方</button>
+            <button class="mode-btn" data-mode="hourly">每小时</button>
           </div>
         </div>
         <div class="table-scroll-box">
@@ -352,7 +352,7 @@ const TABLE_FIELDS = [
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
 let lineTab = "weekly", radarTab = "weekly";
 let chartLine = null, chartRadar = null;
-let tableMode = "hourly"; // official | hourly
+let tableMode = "official"; // official | hourly
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
