@@ -19,6 +19,19 @@ body {
 h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
 
+/* 单独一行涨幅 */
+.headline-deltas {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    margin: -6px 0 12px 0;
+}
+.headline-deltas .delta-item { display: inline-block; margin: 0 8px; }
+.headline-deltas .delta-label { color: #999; }
+.headline-deltas .up { color: #ea3690; font-weight: bold; }
+.headline-deltas .down { color: #27ae60; font-weight: bold; }
+.headline-deltas .flat { color: #999; font-weight: bold; }
+
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
     padding: 12px 0; overflow: hidden; border: 1px solid rgba(234,54,144,0.10);
@@ -136,6 +149,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <div class="container">
   <h1>阴天也会有烦恼吗</h1>
   <div class="update-time" id="update-time">加载中…</div>
+  <div class="headline-deltas" id="headlineDeltas"></div>
 
   <div class="page-grid">
     <div class="card table-card">
@@ -153,7 +167,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
           <thead>
             <tr>
               <th colspan="2" class="col-time-sticky">时间</th>
-              <th id="headlineScore">总分</th>
+              <th>总分</th>
               <th>播放热度</th>
               <th>畅销度</th>
               <th>推荐度</th>
@@ -231,22 +245,25 @@ function fmtTime(dt) {
   const p = n => String(n).padStart(2, "0");
   return `${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
 }
+function dateKey(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
 function businessDay(dt) {
   const d = new Date(dt);
   const minutes = d.getHours() * 60 + d.getMinutes();
   if (minutes <= 20) d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return dateKey(d);
 }
 function businessWeek(dt) {
   const d = new Date(dt);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return businessDay(d);
+  return dateKey(d);
 }
 
-/* 表头总分涨幅：按 CSV 计算
-   日榜：最后一天最新一条 - 当天 06:06
+/* 表头下方单独一行：日榜涨幅 / 周榜涨幅
+   日榜：最后一天最新一条 - 当天 06:06（没有 06:06 就找 6:06，解析后等价）
    周榜：最新一条 - 它所在周周一 00:26 */
 function computeHeadlineDeltas() {
   let dailyDelta = "-";
@@ -256,18 +273,18 @@ function computeHeadlineDeltas() {
     return isNaN(n) ? null : n;
   };
 
+  // 日榜
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
-    const k = businessDay(dt);
+    const k = dateKey(dt);
     if (!dGroups.has(k)) dGroups.set(k, []);
     dGroups.get(k).push({ dt, r });
   }
   const dKeys = [...dGroups.keys()].sort();
   if (dKeys.length) {
-    const lastKey = dKeys[dKeys.length - 1];
-    const list = dGroups.get(lastKey).sort((a, b) => a.dt - b.dt);
+    const list = dGroups.get(dKeys[dKeys.length - 1]).sort((a, b) => a.dt - b.dt);
     const latest = list[list.length - 1];
     const six = list.find(x => x.dt.getHours() === 6 && x.dt.getMinutes() === 6);
     if (latest && six) {
@@ -277,6 +294,7 @@ function computeHeadlineDeltas() {
     }
   }
 
+  // 周榜
   let latestW = null;
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
@@ -284,20 +302,17 @@ function computeHeadlineDeltas() {
     if (!latestW || dt > latestW.dt) latestW = { dt, r };
   }
   if (latestW) {
-    const weekStart = new Date(latestW.dt);
-    const day = weekStart.getDay();
+    const d = new Date(latestW.dt);
+    const day = d.getDay();
     const diff = day === 0 ? -6 : 1 - day;
-    weekStart.setDate(weekStart.getDate() + diff);
-    weekStart.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + diff);
+    const weekKey = dateKey(d);
 
     let monday026 = null;
     for (const r of weeklyRows) {
       const dt = parseTime(r["时间"]);
       if (!dt) continue;
-      if (dt.getFullYear() === weekStart.getFullYear()
-        && dt.getMonth() === weekStart.getMonth()
-        && dt.getDate() === weekStart.getDate()
-        && dt.getHours() === 0 && dt.getMinutes() === 26) {
+      if (dateKey(dt) === weekKey && dt.getHours() === 0 && dt.getMinutes() === 26) {
         monday026 = { dt, r };
         break;
       }
@@ -312,26 +327,31 @@ function computeHeadlineDeltas() {
   return { dailyDelta, weeklyDelta };
 }
 
+function fmtDelta(v) {
+  if (v === "-" || v == null) return "-";
+  const n = parseFloat(v);
+  if (isNaN(n)) return "-";
+  return (n > 0 ? "+" : "") + n.toFixed(2);
+}
+function deltaCls(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? "flat" : (n > 0 ? "up" : (n < 0 ? "down" : "flat"));
+}
+
+function renderHeadlineDeltas() {
+  const { dailyDelta, weeklyDelta } = computeHeadlineDeltas();
+  const el = document.getElementById("headlineDeltas");
+  if (!el) return;
+  el.innerHTML =
+    `<span class="delta-item"><span class="delta-label">日榜</span> `
+    + `<span class="${deltaCls(dailyDelta)}">${fmtDelta(dailyDelta)}</span></span>`
+    + `<span class="delta-item"><span class="delta-label">周榜</span> `
+    + `<span class="${deltaCls(weeklyDelta)}">${fmtDelta(weeklyDelta)}</span></span>`;
+}
+
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
-
-  const { dailyDelta, weeklyDelta } = computeHeadlineDeltas();
-  const fmtD = v => {
-    if (v === "-" || v == null) return "-";
-    const n = parseFloat(v);
-    if (isNaN(n)) return "-";
-    return (n > 0 ? "+" : "") + n.toFixed(2);
-  };
-  const clsD = v => {
-    const n = parseFloat(v);
-    return isNaN(n) ? "flat" : (n > 0 ? "up" : (n < 0 ? "down" : "flat"));
-  };
-  const headEl = document.getElementById("headlineScore");
-  if (headEl) {
-    headEl.innerHTML = `总分<br><span class="cell-change ${clsD(dailyDelta)}">日 ${fmtD(dailyDelta)}</span> / `
-      + `<span class="cell-change ${clsD(weeklyDelta)}">周 ${fmtD(weeklyDelta)}</span>`;
-  }
 
   const sortAsc = rows => rows
     .filter(r => parseTime(r["时间"]))
@@ -573,7 +593,8 @@ function renderLineChart() {
           return html;
         }
         sorted.forEach(p => {
-          const d = deltaAt(series, i, LINE_FIELDS.find(f => f.label === p.seriesName).key);
+          const field = LINE_FIELDS.find(f => f.label === p.seriesName);
+          const d = field ? deltaAt(series, i, field.key) : null;
           let deltaText = "-", deltaColor = "#999";
           if (d !== null && !isNaN(d)) {
             deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
@@ -732,6 +753,7 @@ async function load() {
   document.getElementById("update-time").textContent =
     all.length ? `最近更新：${fmtTime(all[0])}` : "暂无数据";
 
+  renderHeadlineDeltas();
   renderTable();
   renderLineChart();
   renderRadarChart();
