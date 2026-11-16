@@ -10,7 +10,7 @@ INIT_COOKIE = os.environ.get("WEIBO_COOKIE", "")
 USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
 
 TREND_URL = "https://m.s.weibo.com/ajax_topic/trend"
-PARAMS = {"q": "#穆祉丞生日单曲阴天也会有烦恼吗#", "version": "v1", "time": "6m"}
+PARAMS = {"q": "#穆祉丞生日单曲阴天也会有烦恼吗#", "version": "v1", "time": "24h"}
 
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weibo_trend.csv")
 
