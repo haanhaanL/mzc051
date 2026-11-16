@@ -51,23 +51,15 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     width: 130px; min-width: 130px; max-width: 130px;
 }
 .recent-table col.col-time { width: 130px; }
+.recent-table col.col-type { width: 56px; }
 .recent-table col.col-metric { width: auto; }
 
-/* 时间列 rowspan 合并 + 日/周标签 */
+/* 时间列 rowspan 合并后垂直居中 */
 .recent-table td.time-cell {
     vertical-align: middle;
     font-weight: bold;
     color: #555;
     background-color: #ffffff !important;
-    line-height: 1.6;
-}
-.recent-table td.time-cell .time-text { display: block; }
-.recent-table td.time-cell .time-tags {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    margin-top: 2px;
 }
 
 /* 两行一组：日榜行白底、周榜行浅粉底 */
@@ -75,6 +67,17 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table tbody tr.row-weekly { background-color: #fdf7fa; }
 .recent-table tbody tr.row-daily td:first-child { background-color: #ffffff; }
 .recent-table tbody tr.row-weekly td:first-child { background-color: #fdf7fa; }
+
+/* 榜单列标签 */
+.type-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    line-height: 14px;
+}
+.type-badge.daily { background: #fff4e5; color: #fa8c16; }
+.type-badge.weekly { background: #fde7f1; color: #ea3690; }
 
 .range-tabs { display: flex; justify-content: center; gap: 8px; margin: 2px 0 6px 0; }
 .range-btn {
@@ -90,11 +93,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     margin-right: 4px; vertical-align: middle;
 }
-
-.type-tag { display: inline-block; font-size: 10px; padding: 0 4px; border-radius: 3px; margin-left: 2px; }
-.type-tag.weekly { background: #e8f0ff; color: #1677ff; }
-.type-tag.daily { background: #fff4e5; color: #fa8c16; }
-.type-tag.inline { margin-left: 0; font-size: 9px; padding: 0 3px; line-height: 14px; }
 
 .empty-row td { color: #999; padding: 30px 0; }
 
@@ -143,6 +141,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
         <table class="recent-table" id="data-table">
           <colgroup>
             <col class="col-time">
+            <col class="col-type">
             <col class="col-metric">
             <col class="col-metric">
             <col class="col-metric">
@@ -150,7 +149,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
           </colgroup>
           <thead>
             <tr>
-              <th>时间</th>
+              <th colspan="2">时间</th>
               <th>总分</th>
               <th>播放热度</th>
               <th>畅销度</th>
@@ -243,7 +242,7 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
-/* ---------- 表格：时间列 rowspan=2，时间下标日/周，日榜在上、周榜在下 ---------- */
+/* ---------- 表格：时间跨两行、榜单单独一列，日榜在上、周榜在下 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -286,7 +285,7 @@ function renderTable() {
     .slice(0, 12);
 
   if (!keys.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
     return;
   }
 
@@ -311,18 +310,15 @@ function renderTable() {
 
     const trDaily = document.createElement("tr");
     trDaily.className = "row-daily";
-    trDaily.innerHTML = `<td rowspan="2" class="time-cell">`
-      + `<span class="time-text">${key}</span>`
-      + `<span class="time-tags">`
-      + `<span class="type-tag inline daily">日榜</span>`
-      + `<span class="type-tag inline weekly">周榜</span>`
-      + `</span>`
-      + `</td>${renderCells(group, "日榜")}`;
+    trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
+      + `<td><span class="type-badge daily">日榜</span></td>`
+      + `${renderCells(group, "日榜")}`;
     tbody.appendChild(trDaily);
 
     const trWeekly = document.createElement("tr");
     trWeekly.className = "row-weekly";
-    trWeekly.innerHTML = renderCells(group, "周榜");
+    trWeekly.innerHTML = `<td><span class="type-badge weekly">周榜</span></td>`
+      + `${renderCells(group, "周榜")}`;
     tbody.appendChild(trWeekly);
   }
 }
@@ -350,7 +346,6 @@ function dailySeries() {
     for (const { dt, r } of list) {
       labels.push(fmtTime(dt));
       const minutes = dt.getHours() * 60 + dt.getMinutes();
-      // 只在整点 06:06、07:06 … 23:06、次日 00:16 显示刻度
       const isHourMark = minutes % 60 === 6 || (dt.getHours() === 0 && dt.getMinutes() === 16);
       axisLabels.push(isHourMark ? fmtTime(dt) : "");
       for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
