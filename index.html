@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>由你榜数据看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 24px; color: #222; }
+  h2 { margin: 24px 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: center; }
+  th { background: #f5f5f5; }
+  tr.weekly td { background: #eef5ff; }
+  tr.daily td { background: #fff8e8; }
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tab-bar button { padding: 6px 18px; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; }
+  .tab-bar button.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+  .chart-wrap { position: relative; height: 420px; }
+  .empty { color: #999; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h2>最近 12 条数据</h2>
+<table id="data-table">
+  <thead>
+    <tr>
+      <th>时间</th><th>总分</th><th>播放热度</th><th>畅销度</th><th>推荐度</th><th>总分涨幅</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>分数趋势</h2>
+<div class="tab-bar">
+  <button id="tab-daily" class="active">日榜</button>
+  <button id="tab-weekly">周榜</button>
+</div>
+<div class="chart-wrap">
+  <canvas id="trend-chart"></canvas>
+</div>
+
+<script>
+const DAILY_CSV = "daily.csv";
+const WEEKLY_CSV = "weekly.csv";
+const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
+
+let dailyRows = [], weeklyRows = [];
+let chart = null;
+let currentTab = "daily";
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines[0].split(",").map(s => s.replace(/^\uFEFF/, "").trim());
+  return lines.slice(1).filter(Boolean).map(line => {
+    const cells = line.split(",");
+    const obj = {};
+    header.forEach((h, i) => obj[h] = (cells[i] || "").trim());
+    return obj;
+  });
+}
+
+function parseTime(s) {
+  const m = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+}
+
+function businessDay(dt) {
+  const d = new Date(dt);
+  const minutes = d.getHours() * 60 + d.getMinutes();
+  if (minutes <= 16) d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function businessWeek(dt) {
+  const d = new Date(dt);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return businessDay(d);
+}
+
+function renderTable() {
+  const tbody = document.querySelector("#data-table tbody");
+  tbody.innerHTML = "";
+
+  const map = new Map();
+  const add = (rows, type) => {
+    for (const r of rows) {
+      const t = r["时间"];
+      if (!t) continue;
+      if (!map.has(t)) map.set(t, {});
+      map.get(t)[type] = r;
+    }
+  };
+  add(dailyRows, "日榜");
+  add(weeklyRows, "周榜");
+
+  const times = [...map.keys()]
+    .sort((a, b) => parseTime(b) - parseTime(a))
+    .slice(0, 12);
+
+  if (!times.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
+    return;
+  }
+
+  for (const t of times) {
+    const group = map.get(t);
+    for (const type of ["周榜", "日榜"]) {
+      const r = group[type];
+      const tr = document.createElement("tr");
+      tr.className = type === "周榜" ? "weekly" : "daily";
+      if (!r) {
+        tr.innerHTML = `<td>${t}<br><small>${type}</small></td><td colspan="5">无数据</td>`;
+      } else {
+        tr.innerHTML = `
+          <td>${t}<br><small>${type}</small></td>
+          <td>${r["综合得分"] || "-"}</td>
+          <td>${r["播放热度"] || "-"}</td>
+          <td>${r["畅销度"] || "-"}</td>
+          <td>${r["推荐度"] || "-"}</td>
+          <td>${r["涨幅"] || "-"}</td>`;
+      }
+      tbody.appendChild(tr);
+    }
+  }
+}
+
+function dailySeries() {
+  const groups = new Map();
+  for (const r of dailyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    const key = businessDay(dt);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ dt, r });
+  }
+  const labels = [], data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const keys = [...groups.keys()].sort().slice(-7);
+  for (const k of keys) {
+    const list = groups.get(k)
+      .filter(x => {
+        const m = x.dt.getHours() * 60 + x.dt.getMinutes();
+        return m >= 6 * 60 + 6;
+      })
+      .sort((a, b) => a.dt - b.dt);
+    for (const { dt, r } of list) {
+      labels.push(`${k} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`);
+      for (const m of METRICS) data[m].push(parseFloat(r[m]) || 0);
+    }
+  }
+  return { labels, data };
+}
+
+function weeklySeries() {
+  const now = new Date();
+  const weekKey = businessWeek(now);
+  const groups = new Map();
+  for (const r of weeklyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    if (businessWeek(dt) !== weekKey) continue;
+    const k = businessDay(dt);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push({ dt, r });
+  }
+  const labels = [], data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const keys = [...groups.keys()].sort();
+  for (const k of keys) {
+    const list = groups.get(k).sort((a, b) => a.dt - b.dt);
+    if (!list.length) continue;
+    const early = list.find(x => {
+      const m = x.dt.getHours() * 60 + x.dt.getMinutes();
+      return m >= 26;
+    }) || list[0];
+    const latest = list[list.length - 1];
+    const picked = early === latest ? [early] : [early, latest];
+    for (const { dt, r } of picked) {
+      labels.push(`${k} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`);
+      for (const m of METRICS) data[m].push(parseFloat(r[m]) || 0);
+    }
+  }
+  return { labels, data };
+}
+
+function renderChart() {
+  const series = currentTab === "daily" ? dailySeries() : weeklySeries();
+  const colors = {
+    "综合得分": "#1677ff",
+    "播放热度": "#52c41a",
+    "畅销度": "#fa8c16",
+    "推荐度": "#eb2f96"
+  };
+  const datasets = METRICS.map(m => ({
+    label: m,
+    data: series.data[m],
+    borderColor: colors[m],
+    backgroundColor: colors[m],
+    tension: 0.3,
+    pointRadius: 2
+  }));
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("trend-chart"), {
+    type: "line",
+    data: { labels: series.labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "top" } },
+      scales: { y: { beginAtZero: false } }
+    }
+  });
+}
+
+document.getElementById("tab-daily").onclick = () => {
+  currentTab = "daily";
+  document.getElementById("tab-daily").classList.add("active");
+  document.getElementById("tab-weekly").classList.remove("active");
+  renderChart();
+};
+document.getElementById("tab-weekly").onclick = () => {
+  currentTab = "weekly";
+  document.getElementById("tab-weekly").classList.add("active");
+  document.getElementById("tab-daily").classList.remove("active");
+  renderChart();
+};
+
+async function load() {
+  const [d, w] = await Promise.all([
+    fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
+    fetch(WEEKLY_CSV).then(r => r.text()).catch(() => "")
+  ]);
+  dailyRows = d ? parseCSV(d) : [];
+  weeklyRows = w ? parseCSV(w) : [];
+  renderTable();
+  renderChart();
+}
+load();
+</script>
+</body>
+</html>
