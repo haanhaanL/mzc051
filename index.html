@@ -12,7 +12,10 @@ body {
     margin: 0; padding: 8px; background-color: #faf7f9; font-family: sans-serif;
     box-sizing: border-box; min-height: 100vh;
 }
-.container { width: 100%; max-width: 1600px; min-height: calc(100vh - 16px); margin: 0 auto; box-sizing: border-box; }
+.container {
+    width: 100%; max-width: 1600px; min-height: calc(100vh - 16px);
+    margin: 0 auto; box-sizing: border-box; padding-bottom: 100px;
+}
 h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
 
@@ -43,13 +46,12 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .recent-table td:first-child {
     position: sticky; left: 0; z-index: 1; color: #555; background-color: #ffffff;
-    width: 130px; min-width: 130px; max-width: 130px;
+    width: 96px; min-width: 96px; max-width: 96px;
 }
-.recent-table col.col-time { width: 130px; }
+.recent-table col.col-time { width: 96px; }
 .recent-table col.col-type { width: 56px; }
 .recent-table col.col-metric { width: auto; }
 
-/* 时间大列整体固定：时间列 + 榜单列 */
 .recent-table th.col-time-sticky,
 .recent-table td.time-cell {
     position: sticky; left: 0; z-index: 6;
@@ -57,14 +59,13 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .recent-table th.col-type-sticky,
 .recent-table td.type-cell {
-    position: sticky; left: 130px; z-index: 6;
+    position: sticky; left: 96px; z-index: 6;
     background-color: inherit;
 }
 .recent-table thead th.col-time-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table thead th.col-type-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table td.time-cell { vertical-align: middle; }
 
-/* 两行一组：日榜行白底、周榜行浅粉底 */
 .recent-table tbody tr.row-daily { background-color: #ffffff; }
 .recent-table tbody tr.row-weekly { background-color: #fdf7fa; }
 .recent-table tbody tr.row-daily td.time-cell,
@@ -202,9 +203,9 @@ const LINE_FIELDS = [
 ];
 const TABLE_FIELDS = [
   { key: "综合得分", changeKey: "涨幅" },
-  { key: "播放热度", changeKey: "" },
-  { key: "畅销度", changeKey: "" },
-  { key: "推荐度", changeKey: "" }
+  { key: "播放热度", changeKey: "播放热度涨幅" },
+  { key: "畅销度", changeKey: "畅销度涨幅" },
+  { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
 
 let dailyRows = [], weeklyRows = [];
@@ -233,7 +234,7 @@ function fmtTime(dt) {
 function businessDay(dt) {
   const d = new Date(dt);
   const minutes = d.getHours() * 60 + d.getMinutes();
-  if (minutes <= 20) d.setDate(d.getDate() - 1); // 0:20 之前算前一天
+  if (minutes <= 20) d.setDate(d.getDate() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function businessWeek(dt) {
@@ -244,17 +245,17 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
-/* 直接读 CSV 计算表头两个涨幅 */
+/* 表头总分涨幅：按 CSV 计算
+   日榜：最后一天最新一条 - 当天 06:06
+   周榜：最新一条 - 它所在周周一 00:26 */
 function computeHeadlineDeltas() {
   let dailyDelta = "-";
   let weeklyDelta = "-";
-
   const num = v => {
     const n = parseFloat(v);
     return isNaN(n) ? null : n;
   };
 
-  // 日榜：最新一条综合得分 - 当天 06:06 综合得分
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -265,7 +266,8 @@ function computeHeadlineDeltas() {
   }
   const dKeys = [...dGroups.keys()].sort();
   if (dKeys.length) {
-    const list = dGroups.get(dKeys[dKeys.length - 1]).sort((a, b) => a.dt - b.dt);
+    const lastKey = dKeys[dKeys.length - 1];
+    const list = dGroups.get(lastKey).sort((a, b) => a.dt - b.dt);
     const latest = list[list.length - 1];
     const six = list.find(x => x.dt.getHours() === 6 && x.dt.getMinutes() === 6);
     if (latest && six) {
@@ -275,39 +277,41 @@ function computeHeadlineDeltas() {
     }
   }
 
-  // 周榜：最新一条综合得分 - 本周一 00:26 综合得分
-  const now = new Date();
-  const weekKey = businessWeek(now);
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-
-  let latestW = null, monday026 = null;
+  let latestW = null;
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
-    if (businessWeek(dt) !== weekKey) continue;
     if (!latestW || dt > latestW.dt) latestW = { dt, r };
-    if (!monday026
-      && dt.getFullYear() === monday.getFullYear()
-      && dt.getMonth() === monday.getMonth()
-      && dt.getDate() === monday.getDate()
-      && dt.getHours() === 0 && dt.getMinutes() === 26) {
-      monday026 = { dt, r };
-    }
   }
-  if (latestW && monday026) {
-    const a = num(latestW.r["综合得分"]);
-    const b = num(monday026.r["综合得分"]);
-    if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
+  if (latestW) {
+    const weekStart = new Date(latestW.dt);
+    const day = weekStart.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    weekStart.setDate(weekStart.getDate() + diff);
+    weekStart.setHours(0, 0, 0, 0);
+
+    let monday026 = null;
+    for (const r of weeklyRows) {
+      const dt = parseTime(r["时间"]);
+      if (!dt) continue;
+      if (dt.getFullYear() === weekStart.getFullYear()
+        && dt.getMonth() === weekStart.getMonth()
+        && dt.getDate() === weekStart.getDate()
+        && dt.getHours() === 0 && dt.getMinutes() === 26) {
+        monday026 = { dt, r };
+        break;
+      }
+    }
+    if (monday026) {
+      const a = num(latestW.r["综合得分"]);
+      const b = num(monday026.r["综合得分"]);
+      if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
+    }
   }
 
   return { dailyDelta, weeklyDelta };
 }
 
-/* ---------- 表格 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -336,19 +340,10 @@ function renderTable() {
   const dailyAsc = sortAsc(dailyRows);
   const weeklyAsc = sortAsc(weeklyRows);
 
-  const addChanges = (rows) => rows.map((r, i) => {
-    const prev = i > 0 ? rows[i - 1] : null;
+  const addChanges = (rows) => rows.map(r => {
     const changes = {};
     TABLE_FIELDS.forEach(f => {
-      let change = "";
-      if (f.changeKey && (r[f.changeKey] || "").trim()) {
-        change = (r[f.changeKey] || "").trim();
-      } else if (prev) {
-        const cur = parseFloat(r[f.key]);
-        const pv = parseFloat(prev[f.key]);
-        if (!isNaN(cur) && !isNaN(pv)) change = (cur - pv).toFixed(2);
-      }
-      changes[f.key] = change;
+      changes[f.key] = (r[f.changeKey] || "").trim();
     });
     return { ...r, _changes: changes, _dt: parseTime(r["时间"]) };
   });
@@ -405,7 +400,7 @@ function renderTable() {
   }
 }
 
-/* ---------- 日榜序列：横轴只显示时间，无数据补完整 ---------- */
+/* 日榜序列：横轴固定 06:06 到 00:16，无数据也完整 */
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -415,10 +410,16 @@ function dailySeries() {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ dt, r });
   }
-  const labels = [], axisLabels = [];
-  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const keys = [...groups.keys()].sort().slice(-7);
+  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const labels = [], axisLabels = [];
   let lastDay = null;
+
+  const fullSlots = [];
+  for (let h = 6; h <= 23; h++) fullSlots.push(`${String(h).padStart(2, "0")}:06`);
+  fullSlots.push("00:16");
+
+  const bySlot = new Map();
   for (const k of keys) {
     const list = groups.get(k)
       .filter(x => {
@@ -428,29 +429,22 @@ function dailySeries() {
       .sort((a, b) => a.dt - b.dt);
     if (list.length) lastDay = list[list.length - 1].dt;
     for (const { dt, r } of list) {
-      labels.push(fmtTime(dt));
-      const minutes = dt.getHours() * 60 + dt.getMinutes();
-      const isHourMark = minutes % 60 === 6 || (dt.getHours() === 0 && dt.getMinutes() === 16);
-      axisLabels.push(isHourMark ? `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}` : "");
-      for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
+      const slot = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+      if (!bySlot.has(slot)) bySlot.set(slot, { dt, r });
     }
   }
 
-  if (!labels.length) {
-    for (let h = 6; h <= 23; h++) {
-      const t = `${String(h).padStart(2, "0")}:06`;
-      labels.push(t);
-      axisLabels.push(t);
-    }
-    labels.push("00:16");
-    axisLabels.push("00:16");
-    METRICS.forEach(m => data[m] = labels.map(() => null));
+  for (const slot of fullSlots) {
+    labels.push(slot);
+    axisLabels.push(slot);
+    const hit = bySlot.get(slot);
+    for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
   }
 
   return { labels, axisLabels, data, last: pickLast(groups), lastDay };
 }
 
-/* ---------- 周榜序列：横轴只显示日期，无数据补完整一周 ---------- */
+/* 周榜序列：横轴固定本周 7 天，无数据也完整 */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -463,42 +457,32 @@ function weeklySeries() {
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push({ dt, r });
   }
-  const labels = [], axisLabels = [];
   const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-  const keys = [...groups.keys()].sort();
-  for (const k of keys) {
-    const list = groups.get(k).sort((a, b) => a.dt - b.dt);
-    if (!list.length) continue;
-    const early = list.find(x => {
-      const m = x.dt.getHours() * 60 + x.dt.getMinutes();
-      return m >= 26;
-    }) || list[0];
-    const latest = list[list.length - 1];
-    const picked = early === latest ? [early] : [early, latest];
-    let first = true;
-    for (const { dt, r } of picked) {
-      const p = n => String(n).padStart(2, "0");
-      labels.push(fmtTime(dt));
-      axisLabels.push(first ? `${p(dt.getMonth() + 1)}/${p(dt.getDate())}` : "");
-      first = false;
-      for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
-    }
-  }
+  const labels = [], axisLabels = [];
 
-  if (!labels.length) {
-    const monday = new Date(now);
-    const day = monday.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    monday.setDate(monday.getDate() + diff);
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      const p = n => String(n).padStart(2, "0");
-      const label = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
-      labels.push(label);
-      axisLabels.push(label);
+  const monday = new Date(now);
+  const day = monday.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  monday.setDate(monday.getDate() + diff);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    const p = n => String(n).padStart(2, "0");
+    const label = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+    labels.push(label);
+    axisLabels.push(label);
+    const dayKey = businessDay(d);
+    const list = (groups.get(dayKey) || []).sort((a, b) => a.dt - b.dt);
+    let hit = null;
+    if (list.length) {
+      const early = list.find(x => {
+        const m = x.dt.getHours() * 60 + x.dt.getMinutes();
+        return m >= 26;
+      }) || list[0];
+      hit = early;
     }
-    METRICS.forEach(m => data[m] = labels.map(() => null));
+    for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
   }
 
   return { labels, axisLabels, data, last: pickLast(groups) };
@@ -518,13 +502,6 @@ function deltaAt(series, idx, key) {
   const arr = series.data[key];
   const cur = arr[idx];
   if (cur === null || cur === undefined) return null;
-  if (key === "综合得分") {
-    const row = series.rows ? series.rows[idx] : null;
-    if (row && row.r && (row.r["涨幅"] || "").trim()) {
-      const v = parseFloat(row.r["涨幅"]);
-      if (!isNaN(v)) return v;
-    }
-  }
   for (let j = idx - 1; j >= 0; j--) {
     if (arr[j] !== null && arr[j] !== undefined) {
       return cur - arr[j];
@@ -533,7 +510,6 @@ function deltaAt(series, idx, key) {
   return null;
 }
 
-/* ---------- 折线图 ---------- */
 function renderLineChart() {
   const series = lineTab === "daily" ? dailySeries() : weeklySeries();
   const hint = lineTab === "daily" ? "日榜：每天 6:06 至次日 0:16" : "周榜：本周内，每天取 0:26 与最新一条";
@@ -597,9 +573,7 @@ function renderLineChart() {
           return html;
         }
         sorted.forEach(p => {
-          const field = LINE_FIELDS.find(f => f.label === p.seriesName);
-          if (!field) return;
-          const d = deltaAt(series, i, field.key);
+          const d = deltaAt(series, i, LINE_FIELDS.find(f => f.label === p.seriesName).key);
           let deltaText = "-", deltaColor = "#999";
           if (d !== null && !isNaN(d)) {
             deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
@@ -645,7 +619,6 @@ function renderLineChart() {
   chartLine.resize();
 }
 
-/* ---------- 雷达图 ---------- */
 function renderRadarChart() {
   const series = radarTab === "daily" ? dailySeries() : weeklySeries();
   if (!chartRadar) chartRadar = echarts.init(document.getElementById("chartRadar"));
@@ -664,10 +637,8 @@ function renderRadarChart() {
     return isNaN(v) ? 0 : v;
   });
 
-  const hint = radarTab === "daily" ? "日榜最新一条的三维度" : "周榜最新一条的三维度";
   document.getElementById("radarLegend").innerHTML =
-    `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`
-    + `<br><span style="color:#bbb;font-size:11px;">${hint}</span>`;
+    `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`;
 
   const lastIdx = series.labels.indexOf(fmtTime(last.dt));
 
@@ -729,7 +700,6 @@ function renderRadarChart() {
   chartRadar.resize();
 }
 
-/* ---------- Tab ---------- */
 document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forEach(btn => {
   btn.addEventListener("click", function () {
     this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
@@ -747,7 +717,6 @@ document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').for
   });
 });
 
-/* ---------- 加载 ---------- */
 async function load() {
   const [d, w] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
