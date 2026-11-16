@@ -21,7 +21,6 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      # 只装微博脚本需要的依赖，不碰 requirements.txt
       - name: install deps
         run: |
           python -m pip install --upgrade pip
@@ -33,9 +32,15 @@ jobs:
         run: python weibo_trend.py
 
       - name: commit csv
+        if: always()
         run: |
           git config user.name github-actions
           git config user.email actions@github.com
+          # 文件不存在时跳过，避免 git add 报 fatal
+          if [ ! -f weibo_trend.csv ]; then
+            echo "weibo_trend.csv 不存在，跳过提交（请看上一步诊断日志）"
+            exit 0
+          fi
           git add weibo_trend.csv
           if git diff --staged --quiet; then
             echo "没有变更，无需提交"
