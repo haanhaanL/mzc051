@@ -6,8 +6,10 @@ ID = "567563613"
 DAILY = f"https://yobang.tencentmusic.com/unichartsapi/yobang/daily/chart/detail/all?itemId={ID}"
 WEEKLY = f"https://yobang.tencentmusic.com/unichartsapi/v1/songs/{ID}/charts_detail"
 HEAD = {"User-Agent": "Mozilla/5.0", "Referer": "https://yobang.tencentmusic.com/"}
-COLS = ["时间", "榜单", "排名", "综合得分", "涨幅", "播放热度", "畅销度", "推荐度",
-        "播放热度涨幅", "畅销度涨幅", "推荐度涨幅"]
+COLS = ["时间", "榜单", "排名", "综合得分", "涨幅",
+        "播放热度", "播放热度涨幅",
+        "畅销度", "畅销度涨幅",
+        "推荐度", "推荐度涨幅"]
 BJ = timezone(timedelta(hours=8))
 DIMS = ["播放热度", "畅销度", "推荐度"]
 
@@ -89,8 +91,9 @@ def save(path, row):
         w.writerow([
             now.strftime("%Y/%m/%d %H:%M"),
             row["榜单"], row["排名"], row["综合得分"], score_change,
-            row["播放热度"], row["畅销度"], row["推荐度"],
-            dim_changes["播放热度"], dim_changes["畅销度"], dim_changes["推荐度"],
+            row["播放热度"], dim_changes["播放热度"],
+            row["畅销度"], dim_changes["畅销度"],
+            row["推荐度"], dim_changes["推荐度"],
         ])
     print("写入", path, row["榜单"], row["综合得分"], score_change)
 
