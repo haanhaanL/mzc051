@@ -244,10 +244,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     <div class="tables-row">
       <div class="card table-card">
         <div class="title-row">
-          <div class="title" id="dataTableTitle">由你-周/日榜 · 最近 12 条</div>
+          <div class="title" id="dataTableTitle">由你周/日榜-官方CD · 最近 12 条</div>
           <div class="mode-tabs" id="modeTabs">
-            <button class="mode-btn active" data-mode="official">官方</button>
-            <button class="mode-btn" data-mode="hourly">每小时</button>
+            <button class="mode-btn active" data-mode="hourly">每小时</button>
+            <button class="mode-btn" data-mode="official">官方</button>
           </div>
         </div>
         <div class="table-scroll-box">
@@ -352,7 +352,7 @@ const TABLE_FIELDS = [
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
 let lineTab = "weekly", radarTab = "weekly";
 let chartLine = null, chartRadar = null;
-let tableMode = "official"; // official | hourly
+let tableMode = "hourly"; // official | hourly
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -506,8 +506,8 @@ function renderTable() {
   const titleEl = document.getElementById("dataTableTitle");
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
-      ? "由你-每小时 06 分 · 最近 12 组"
-      : "由你-周/日榜 · 最近 12 条";
+      ? "由你周/日榜-每小时 · 最近 12 条"
+      : "由你周/日榜-官方CD · 最近 12 条";
   }
 
   if (tableMode === "hourly") {
