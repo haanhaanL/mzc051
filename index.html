@@ -53,12 +53,21 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table col.col-time { width: 130px; }
 .recent-table col.col-metric { width: auto; }
 
-/* 时间列 rowspan 合并后垂直居中，白底 */
+/* 时间列 rowspan 合并 + 日/周标签 */
 .recent-table td.time-cell {
     vertical-align: middle;
     font-weight: bold;
     color: #555;
     background-color: #ffffff !important;
+    line-height: 1.6;
+}
+.recent-table td.time-cell .time-text { display: block; }
+.recent-table td.time-cell .time-tags {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-top: 2px;
 }
 
 /* 两行一组：日榜行白底、周榜行浅粉底 */
@@ -85,6 +94,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .type-tag { display: inline-block; font-size: 10px; padding: 0 4px; border-radius: 3px; margin-left: 2px; }
 .type-tag.weekly { background: #e8f0ff; color: #1677ff; }
 .type-tag.daily { background: #fff4e5; color: #fa8c16; }
+.type-tag.inline { margin-left: 0; font-size: 9px; padding: 0 3px; line-height: 14px; }
+
 .empty-row td { color: #999; padding: 30px 0; }
 
 .cell-main { font-weight: bold; color: #333; }
@@ -232,7 +243,7 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
-/* ---------- 表格：时间列 rowspan=2，日榜在上、周榜在下 ---------- */
+/* ---------- 表格：时间列 rowspan=2，时间下标日/周，日榜在上、周榜在下 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -298,11 +309,19 @@ function renderTable() {
   for (const key of keys) {
     const group = map.get(key);
 
+    // 第一行：时间（rowspan=2，内含日/周标签）+ 日榜
     const trDaily = document.createElement("tr");
     trDaily.className = "row-daily";
-    trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>${renderCells(group, "日榜")}`;
+    trDaily.innerHTML = `<td rowspan="2" class="time-cell">`
+      + `<span class="time-text">${key}</span>`
+      + `<span class="time-tags">`
+      + `<span class="type-tag inline daily">日榜</span>`
+      + `<span class="type-tag inline weekly">周榜</span>`
+      + `</span>`
+      + `</td>${renderCells(group, "日榜")}`;
     tbody.appendChild(trDaily);
 
+    // 第二行：周榜
     const trWeekly = document.createElement("tr");
     trWeekly.className = "row-weekly";
     trWeekly.innerHTML = renderCells(group, "周榜");
