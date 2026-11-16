@@ -122,23 +122,32 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table thead th.col-type-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table td.time-cell { vertical-align: middle; }
 
-/* 日榜行浅橙、周榜行浅粉 */
-.recent-table tbody tr.row-daily td { background-color: #fff7ed; }
-.recent-table tbody tr.row-weekly td { background-color: #fdf2f8; }
+/* 背景：按业务日分组，白 / 浅粉交替 */
+.recent-table tbody tr.row-daily td,
+.recent-table tbody tr.row-weekly td { background-color: #ffffff; }
 
-/* 时间列和榜单列跟随行底色 */
-.recent-table tbody tr.row-daily td.time-cell,
-.recent-table tbody tr.row-daily td.type-cell { background-color: #fff7ed; }
-.recent-table tbody tr.row-weekly td.time-cell,
-.recent-table tbody tr.row-weekly td.type-cell { background-color: #fdf2f8; }
-
-/* 按业务日分组交替：偶数组加深一档 */
 .recent-table tbody tr.row-group-alt.row-daily td,
+.recent-table tbody tr.row-group-alt.row-weekly td { background-color: #fdf7fa; }
+
+.recent-table tbody tr.row-daily td.time-cell,
+.recent-table tbody tr.row-daily td.type-cell { background-color: #ffffff; }
+.recent-table tbody tr.row-weekly td.time-cell,
+.recent-table tbody tr.row-weekly td.type-cell { background-color: #ffffff; }
+
 .recent-table tbody tr.row-group-alt.row-daily td.time-cell,
-.recent-table tbody tr.row-group-alt.row-daily td.type-cell { background-color: #ffedd5; }
-.recent-table tbody tr.row-group-alt.row-weekly td,
+.recent-table tbody tr.row-group-alt.row-daily td.type-cell { background-color: #fdf7fa; }
 .recent-table tbody tr.row-group-alt.row-weekly td.time-cell,
-.recent-table tbody tr.row-group-alt.row-weekly td.type-cell { background-color: #fce7f3; }
+.recent-table tbody tr.row-group-alt.row-weekly td.type-cell { background-color: #fdf7fa; }
+
+/* 文字：日榜橙色、周榜粉色 */
+.recent-table tbody tr.row-daily td { color: #fa8c16; }
+.recent-table tbody tr.row-weekly td { color: #ea3690; }
+
+/* 分数和涨幅的原有颜色优先级更高，保留 */
+.recent-table .cell-main { color: #333; }
+.recent-table .cell-change.up { color: #ea3690; }
+.recent-table .cell-change.down { color: #27ae60; }
+.recent-table .cell-change.flat { color: #999; }
 
 .type-badge {
     display: inline-block; font-size: 10px; padding: 1px 6px;
