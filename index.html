@@ -23,22 +23,27 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .headline-deltas {
     text-align: center;
     margin: -4px 0 14px 0;
-    display: flex;
-    justify-content: center;
+}
+.headline-deltas .delta-box {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 14px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid rgba(234,54,144,0.25);
+    box-shadow: 0 2px 8px rgba(234,54,144,0.10);
 }
 .headline-deltas .delta-item {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    background: #fff;
-    border: 1px solid rgba(234,54,144,0.25);
-    box-shadow: 0 2px 6px rgba(234,54,144,0.08);
+}
+.headline-deltas .delta-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(234,54,144,0.20);
 }
 .headline-deltas .delta-label {
     color: #999;
@@ -371,10 +376,13 @@ function renderHeadlineDeltas() {
   const el = document.getElementById("headlineDeltas");
   if (!el) return;
   el.innerHTML =
-    `<span class="delta-item"><span class="delta-label">日榜</span> `
+    `<div class="delta-box">`
+    + `<span class="delta-item"><span class="delta-label">日榜</span> `
     + `<span class="${deltaCls(dailyDelta)}">${fmtDelta(dailyDelta)}</span></span>`
+    + `<span class="delta-divider"></span>`
     + `<span class="delta-item"><span class="delta-label">周榜</span> `
-    + `<span class="${deltaCls(weeklyDelta)}">${fmtDelta(weeklyDelta)}</span></span>`;
+    + `<span class="${deltaCls(weeklyDelta)}">${fmtDelta(weeklyDelta)}</span></span>`
+    + `</div>`;
 }
 
 function renderTable() {
