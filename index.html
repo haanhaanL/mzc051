@@ -90,6 +90,16 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table thead th.col-type-sticky { z-index: 22; background-color: #ea3690 !important; }
 .recent-table td.time-cell { vertical-align: middle; }
 
+/* 两张表 tbody 单行统一高度：微博表单行 = 日/周榜每个小行 */
+#data-table tbody td,
+#weibo-table tbody td {
+    height: 32px;
+    line-height: 20px;
+    padding-top: 0;
+    padding-bottom: 0;
+    vertical-align: middle;
+}
+
 .recent-table tbody tr.row-daily td,
 .recent-table tbody tr.row-weekly td { background-color: #ffffff; }
 .recent-table tbody tr.row-group-alt.row-daily td,
@@ -170,6 +180,13 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .recent-table col.col-type { width: 40px; }
     .recent-table th.col-type-sticky,
     .recent-table td.type-cell { left: 76px; }
+
+    /* 移动端单行高度稍小 */
+    #data-table tbody td,
+    #weibo-table tbody td {
+        height: 28px;
+        line-height: 18px;
+    }
 }
 
 #global-watermark {
