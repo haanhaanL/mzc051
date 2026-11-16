@@ -1,7 +1,7 @@
 import os
 import csv
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ============================================================
 # 配置区
@@ -24,6 +24,9 @@ METRIC_MAP = {
 }
 
 ENABLE_REFRESH = True
+
+# 北京时间时区
+BJT = timezone(timedelta(hours=8))
 
 
 # ============================================================
@@ -49,20 +52,32 @@ def build_session():
 def refresh_cookie(sess):
     try:
         sess.get("https://m.weibo.cn/", timeout=10)
-        print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] Cookie 保活刷新完成")
+        print(f"[{datetime.now(BJT):%Y-%m-%d %H:%M:%S}] Cookie 保活刷新完成")
     except Exception as e:
-        print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] 保活刷新失败: {e}")
+        print(f"[{datetime.now(BJT):%Y-%m-%d %H:%M:%S}] 保活刷新失败: {e}")
 
 
 # ============================================================
 # 时间处理
 # ============================================================
 def resolve_date(time_str, now=None):
-    now = now or datetime.now()
+    """
+    把 HH:MM 解析成北京时间 YYYY-MM-DD HH:MM。
+    - 若 HH:MM 不晚于当前时刻，就是今天；
+    - 若晚于当前时刻，但差距很小（接口窗口内，<= 30 分钟），仍算今天；
+    - 只有差距很大（> 12 小时）才视为前一天（跨午夜窗口）。
+    """
+    now = now or datetime.now(BJT)
     hh, mm = map(int, time_str.split(":"))
     candidate = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+
     if candidate > now:
-        candidate -= timedelta(days=1)
+        diff = candidate - now
+        if diff <= timedelta(minutes=30):
+            pass  # 窗口内稍晚的刻度，仍是今天
+        elif diff > timedelta(hours=12):
+            candidate -= timedelta(days=1)  # 明显是前一天（跨午夜）
+        # 其它情况保持今天
     return candidate.strftime("%Y-%m-%d %H:%M")
 
 
