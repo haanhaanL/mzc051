@@ -22,15 +22,43 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 /* 单独一行涨幅 */
 .headline-deltas {
     text-align: center;
-    font-size: 12px;
-    color: #666;
-    margin: -6px 0 12px 0;
+    margin: -4px 0 14px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
-.headline-deltas .delta-item { display: inline-block; margin: 0 8px; }
-.headline-deltas .delta-label { color: #999; }
-.headline-deltas .up { color: #ea3690; font-weight: bold; }
-.headline-deltas .down { color: #27ae60; font-weight: bold; }
-.headline-deltas .flat { color: #999; font-weight: bold; }
+.headline-deltas .delta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid rgba(234,54,144,0.25);
+    box-shadow: 0 2px 6px rgba(234,54,144,0.08);
+}
+.headline-deltas .delta-label {
+    color: #999;
+    font-size: 12px;
+}
+.headline-deltas .up {
+    color: #ea3690;
+    font-weight: bold;
+    font-size: 14px;
+}
+.headline-deltas .down {
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 14px;
+}
+.headline-deltas .flat {
+    color: #999;
+    font-weight: bold;
+    font-size: 14px;
+}
 
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
