@@ -309,7 +309,6 @@ function renderTable() {
   for (const key of keys) {
     const group = map.get(key);
 
-    // 第一行：时间（rowspan=2，内含日/周标签）+ 日榜
     const trDaily = document.createElement("tr");
     trDaily.className = "row-daily";
     trDaily.innerHTML = `<td rowspan="2" class="time-cell">`
@@ -321,7 +320,6 @@ function renderTable() {
       + `</td>${renderCells(group, "日榜")}`;
     tbody.appendChild(trDaily);
 
-    // 第二行：周榜
     const trWeekly = document.createElement("tr");
     trWeekly.className = "row-weekly";
     trWeekly.innerHTML = renderCells(group, "周榜");
@@ -329,7 +327,7 @@ function renderTable() {
   }
 }
 
-/* ---------- 序列 ---------- */
+/* ---------- 日榜序列：横轴只显示整点大刻度 ---------- */
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -339,7 +337,8 @@ function dailySeries() {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ dt, r });
   }
-  const labels = [], data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const labels = [], axisLabels = [];
+  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const keys = [...groups.keys()].sort().slice(-7);
   for (const k of keys) {
     const list = groups.get(k)
@@ -350,12 +349,17 @@ function dailySeries() {
       .sort((a, b) => a.dt - b.dt);
     for (const { dt, r } of list) {
       labels.push(fmtTime(dt));
+      const minutes = dt.getHours() * 60 + dt.getMinutes();
+      // 只在整点 06:06、07:06 … 23:06、次日 00:16 显示刻度
+      const isHourMark = minutes % 60 === 6 || (dt.getHours() === 0 && dt.getMinutes() === 16);
+      axisLabels.push(isHourMark ? fmtTime(dt) : "");
       for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
-  return { labels, data, last: pickLast(groups) };
+  return { labels, axisLabels, data, last: pickLast(groups) };
 }
 
+/* ---------- 周榜序列：横轴只显示日期 xx/xx ---------- */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -368,7 +372,8 @@ function weeklySeries() {
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push({ dt, r });
   }
-  const labels = [], data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const labels = [], axisLabels = [];
+  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const keys = [...groups.keys()].sort();
   for (const k of keys) {
     const list = groups.get(k).sort((a, b) => a.dt - b.dt);
@@ -379,12 +384,16 @@ function weeklySeries() {
     }) || list[0];
     const latest = list[list.length - 1];
     const picked = early === latest ? [early] : [early, latest];
+    let first = true;
     for (const { dt, r } of picked) {
+      const p = n => String(n).padStart(2, "0");
       labels.push(fmtTime(dt));
+      axisLabels.push(first ? `${p(dt.getMonth() + 1)}/${p(dt.getDate())}` : "");
+      first = false;
       for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
-  return { labels, data, last: pickLast(groups) };
+  return { labels, axisLabels, data, last: pickLast(groups) };
 }
 
 function pickLast(groups) {
@@ -497,8 +506,14 @@ function renderLineChart() {
     xAxis: {
       type: "category",
       boundaryGap: false,
-      data: series.labels,
-      axisLabel: { interval: "auto", fontSize: 10, color: "#888", rotate: 45 },
+      data: series.axisLabels,
+      axisLabel: {
+        interval: 0,
+        fontSize: 10,
+        color: "#888",
+        rotate: 45,
+        formatter: function (value) { return value || ""; }
+      },
       axisLine: { lineStyle: { color: "#f0d6e4" } }
     },
     yAxis: {
