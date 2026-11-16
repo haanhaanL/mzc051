@@ -259,12 +259,8 @@ with httpx.Client(headers=HEAD, timeout=20) as c:
     save("daily.csv", get_daily(c))
     save("weekly.csv", get_weekly(c))
 
-# 只有当前是 06 分才重新生成 combined_06.csv
+# 每次运行都重新生成 combined_06.csv（全量覆盖）
 try:
-    now = datetime.now(BJ)
-    if now.minute == 6:
-        export_combined_06()
-    else:
-        print(f"当前 {now.strftime('%H:%M')}，非 06 分，跳过 combined_06.csv 生成")
+    export_combined_06()
 except Exception as e:
     print("combined_06.csv 生成失败：", e)
