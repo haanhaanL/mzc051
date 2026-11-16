@@ -19,51 +19,63 @@ body {
 h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
 
-/* 单独一行涨幅 */
+/* 表头下方涨幅：两行，每行 标签 + 总分 + 分隔符 + 三维度 */
 .headline-deltas {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     margin: -4px 0 14px 0;
 }
-.headline-deltas .delta-box {
+.headline-deltas .delta-line {
     display: inline-flex;
     align-items: center;
-    gap: 14px;
-    padding: 6px 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 6px 16px;
     border-radius: 999px;
-    font-size: 13px;
+    font-size: 12px;
     background: #fff;
     border: 1px solid rgba(234,54,144,0.25);
     box-shadow: 0 2px 8px rgba(234,54,144,0.10);
 }
-.headline-deltas .delta-item {
+.headline-deltas .delta-line.weekly {
+    background: #fdf7fa;
+}
+.headline-deltas .delta-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    line-height: 16px;
+    font-weight: bold;
+}
+.headline-deltas .delta-line.daily .delta-badge {
+    background: #fff4e5;
+    color: #fa8c16;
+}
+.headline-deltas .delta-line.weekly .delta-badge {
+    background: #fde7f1;
+    color: #ea3690;
+}
+.headline-deltas .delta-total,
+.headline-deltas .delta-dim {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 .headline-deltas .delta-divider {
     width: 1px;
-    height: 16px;
+    height: 14px;
     background: rgba(234,54,144,0.20);
 }
 .headline-deltas .delta-label {
     color: #999;
-    font-size: 12px;
+    font-size: 11px;
 }
-.headline-deltas .up {
-    color: #ea3690;
-    font-weight: bold;
-    font-size: 14px;
-}
-.headline-deltas .down {
-    color: #27ae60;
-    font-weight: bold;
-    font-size: 14px;
-}
-.headline-deltas .flat {
-    color: #999;
-    font-weight: bold;
-    font-size: 14px;
-}
+.headline-deltas .up { color: #ea3690; font-weight: bold; font-size: 13px; }
+.headline-deltas .down { color: #27ae60; font-weight: bold; font-size: 13px; }
+.headline-deltas .flat { color: #999; font-weight: bold; font-size: 13px; }
 
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
@@ -372,17 +384,40 @@ function deltaCls(v) {
 }
 
 function renderHeadlineDeltas() {
-  const { dailyDelta, weeklyDelta } = computeHeadlineDeltas();
+  const { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
   const el = document.getElementById("headlineDeltas");
   if (!el) return;
+
+  const DIMS = ["播放热度", "畅销度", "推荐度"];
+
+  const fmtOne = v => {
+    if (v === "-" || v == null || v === "") return "-";
+    const n = parseFloat(v);
+    if (isNaN(n)) return "-";
+    return (n > 0 ? "+" : "") + n.toFixed(2);
+  };
+  const clsOne = v => {
+    const n = parseFloat(v);
+    return isNaN(n) ? "flat" : (n > 0 ? "up" : (n < 0 ? "down" : "flat"));
+  };
+
+  const buildLine = (label, total, dims, typeCls) => {
+    const parts = DIMS.map(d =>
+      `<span class="delta-dim"><span class="delta-label">${d}</span> `
+      + `<span class="${clsOne(dims[d])}">${fmtOne(dims[d])}</span></span>`
+    ).join("");
+    return `<div class="delta-line ${typeCls}">`
+      + `<span class="delta-badge">${label}</span>`
+      + `<span class="delta-total"><span class="delta-label">总分</span> `
+      + `<span class="${clsOne(total)}">${fmtOne(total)}</span></span>`
+      + `<span class="delta-divider"></span>`
+      + parts
+      + `</div>`;
+  };
+
   el.innerHTML =
-    `<div class="delta-box">`
-    + `<span class="delta-item"><span class="delta-label">日榜</span> `
-    + `<span class="${deltaCls(dailyDelta)}">${fmtDelta(dailyDelta)}</span></span>`
-    + `<span class="delta-divider"></span>`
-    + `<span class="delta-item"><span class="delta-label">周榜</span> `
-    + `<span class="${deltaCls(weeklyDelta)}">${fmtDelta(weeklyDelta)}</span></span>`
-    + `</div>`;
+    buildLine("日榜", dailyDelta, dailyDimDeltas, "daily")
+    + buildLine("周榜", weeklyDelta, weeklyDimDeltas, "weekly");
 }
 
 function renderTable() {
