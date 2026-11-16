@@ -244,7 +244,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     <div class="tables-row">
       <div class="card table-card">
         <div class="title-row">
-          <div class="title" id="dataTableTitle">由你周/日榜-官方CD · 最近 12 条</div>
+          <div class="title" id="dataTableTitle">由你榜-官方CD · 最近 12 条</div>
           <div class="mode-tabs" id="modeTabs">
             <button class="mode-btn active" data-mode="hourly">每小时</button>
             <button class="mode-btn" data-mode="official">官方</button>
@@ -506,8 +506,8 @@ function renderTable() {
   const titleEl = document.getElementById("dataTableTitle");
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
-      ? "由你周/日榜-每小时 · 最近 12 条"
-      : "由你周/日榜-官方CD · 最近 12 条";
+      ? "由你榜-每小时 · 最近 12 条"
+      : "由你榜-官方CD · 最近 12 条";
   }
 
   if (tableMode === "hourly") {
