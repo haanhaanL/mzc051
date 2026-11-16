@@ -54,7 +54,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table col.col-type { width: 56px; }
 .recent-table col.col-metric { width: auto; }
 
-/* 时间列 rowspan 合并后垂直居中 */
 .recent-table td.time-cell {
     vertical-align: middle;
     font-weight: bold;
@@ -62,13 +61,11 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     background-color: #ffffff !important;
 }
 
-/* 两行一组：日榜行白底、周榜行浅粉底 */
 .recent-table tbody tr.row-daily { background-color: #ffffff; }
 .recent-table tbody tr.row-weekly { background-color: #fdf7fa; }
 .recent-table tbody tr.row-daily td:first-child { background-color: #ffffff; }
 .recent-table tbody tr.row-weekly td:first-child { background-color: #fdf7fa; }
 
-/* 榜单列标签 */
 .type-badge {
     display: inline-block;
     font-size: 10px;
@@ -242,7 +239,7 @@ function businessWeek(dt) {
   return businessDay(d);
 }
 
-/* ---------- 表格：时间跨两行、榜单单独一列，日榜在上、周榜在下 ---------- */
+/* ---------- 表格 ---------- */
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -323,7 +320,7 @@ function renderTable() {
   }
 }
 
-/* ---------- 日榜序列：横轴只显示整点大刻度 ---------- */
+/* ---------- 日榜序列：空数据也补完整横轴 ---------- */
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -351,10 +348,22 @@ function dailySeries() {
       for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
+
+  if (!labels.length) {
+    for (let h = 6; h <= 23; h++) {
+      const t = `${String(h).padStart(2, "0")}:06`;
+      labels.push(t);
+      axisLabels.push(t);
+    }
+    labels.push("次日 00:16");
+    axisLabels.push("次日 00:16");
+    METRICS.forEach(m => data[m] = labels.map(() => null));
+  }
+
   return { labels, axisLabels, data, last: pickLast(groups) };
 }
 
-/* ---------- 周榜序列：横轴只显示日期 xx/xx ---------- */
+/* ---------- 周榜序列：空数据也补完整横轴 ---------- */
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
@@ -388,6 +397,23 @@ function weeklySeries() {
       for (const m of METRICS) data[m].push(parseFloat(r[m]) || null);
     }
   }
+
+  if (!labels.length) {
+    const monday = new Date(now);
+    const day = monday.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    monday.setDate(monday.getDate() + diff);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      const p = n => String(n).padStart(2, "0");
+      const label = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+      labels.push(label);
+      axisLabels.push(label);
+    }
+    METRICS.forEach(m => data[m] = labels.map(() => null));
+  }
+
   return { labels, axisLabels, data, last: pickLast(groups) };
 }
 
