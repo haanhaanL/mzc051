@@ -63,21 +63,15 @@ def refresh_cookie(sess):
 def resolve_date(time_str, now=None):
     """
     把 HH:MM 解析成北京时间 YYYY-MM-DD HH:MM。
-    - 若 HH:MM 不晚于当前时刻，就是今天；
-    - 若晚于当前时刻，但差距很小（接口窗口内，<= 30 分钟），仍算今天；
-    - 只有差距很大（> 12 小时）才视为前一天（跨午夜窗口）。
+    接口 time=24h 返回过去 24 小时刻度：
+    - HH:MM 不晚于当前时刻 -> 今天；
+    - HH:MM 晚于当前时刻 -> 昨天（窗口回溯，不可能是未来）。
     """
     now = now or datetime.now(BJT)
     hh, mm = map(int, time_str.split(":"))
     candidate = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-
     if candidate > now:
-        diff = candidate - now
-        if diff <= timedelta(minutes=30):
-            pass  # 窗口内稍晚的刻度，仍是今天
-        elif diff > timedelta(hours=12):
-            candidate -= timedelta(days=1)  # 明显是前一天（跨午夜）
-        # 其它情况保持今天
+        candidate -= timedelta(days=1)
     return candidate.strftime("%Y-%m-%d %H:%M")
 
 
@@ -120,11 +114,15 @@ def parse_trend(data, now=None):
 
 def upsert_rows(rows, filename=CSV_FILE):
     """
-    首次值优先：时间不存在 -> 新增；时间已存在 -> 忽略。
+    规则：
+    - 时间不存在 -> 新增；
+    - 时间已存在且是同一天 -> 用最新值覆盖；
+    - 时间已存在但跨天 -> 保留旧日期不动。
     保证文件开头有表头。
     """
     existing = load_existing(filename)
     new_rows = []
+    updated_count = 0
 
     # 本次抓取内部按时间去重，同时间保留第一次出现
     seen = set()
@@ -133,8 +131,19 @@ def upsert_rows(rows, filename=CSV_FILE):
         if t in seen:
             continue
         seen.add(t)
+
         if t in existing:
-            continue  # 首次值优先，忽略后续变化
+            old = existing[t]
+            if t[:10] == old["时间"][:10]:
+                # 同一天：用最新值覆盖
+                new_row = {f: r.get(f, "") for f in FIELDS}
+                new_row["时间"] = t
+                if new_row != old:
+                    existing[t] = new_row
+                    updated_count += 1
+            # 跨天：保留旧值，不动
+            continue
+
         new_rows.append({f: r.get(f, "") for f in FIELDS})
 
     # 判断是否需要补表头：文件不存在 / 为空 / 第一行不是表头
@@ -144,7 +153,8 @@ def upsert_rows(rows, filename=CSV_FILE):
             first_line = f.readline().lstrip("\ufeff").strip()
         need_header = first_line != ",".join(FIELDS)
 
-    if need_header:
+    if need_header or updated_count:
+        # 有表头修复或同天覆盖 -> 重写整个文件
         all_rows = list(existing.values()) + new_rows
         all_rows.sort(key=lambda x: x["时间"])
         with open(filename, "w", newline="", encoding="utf-8-sig") as f:
@@ -156,10 +166,10 @@ def upsert_rows(rows, filename=CSV_FILE):
             writer = csv.DictWriter(f, fieldnames=FIELDS)
             writer.writerows(new_rows)
 
-    ignored = len(seen) - len(new_rows)
-    print(f"新增 {len(new_rows)} 行，忽略已存在时间点 {ignored} 个")
+    ignored = len(seen) - len(new_rows) - updated_count
+    print(f"新增 {len(new_rows)} 行，同天覆盖 {updated_count} 个，忽略 {ignored} 个")
     print(f"CSV 文件路径: {filename}")
-    return len(new_rows), ignored
+    return len(new_rows), updated_count
 
 
 # ============================================================
