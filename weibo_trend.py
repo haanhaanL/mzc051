@@ -1,17 +1,20 @@
-import requests
-import csv
 import os
-import json
+import csv
+import requests
 from datetime import datetime, timedelta
 
 # ============================================================
 # 配置区
 # ============================================================
-COOKIE_FILE = "weibo_cookie.json"   # Cookie 持久化文件
-CSV_FILE = "weibo_trend.csv"
+# Cookie 从 GitHub Actions Secrets 注入，不在代码里写死
+INIT_COOKIE = os.environ.get("WEIBO_COOKIE", "")
+USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
 
 TREND_URL = "https://m.s.weibo.com/ajax_topic/trend"
 PARAMS = {"q": "#穆祉丞生日单曲阴天也会有烦恼吗#", "version": "v1", "time": "6m"}
+
+# 建议改成绝对路径，避免 cron/Actions 工作目录不一致
+CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weibo_trend.csv")
 
 BASE_FIELDS = ["时间", "阅读量", "讨论量", "互动量", "原创量"]
 FIELDS = BASE_FIELDS + ["阅读量_修正", "讨论量_修正", "互动量_修正", "原创量_修正"]
@@ -23,61 +26,31 @@ METRIC_MAP = {
     "ori": "原创量",
 }
 
-# 首次运行用的初始 Cookie / UA（仅当 cookie 文件不存在时使用）
-INIT_COOKIE = "在这里粘贴你的完整 Cookie"
-USER_AGENT = "在这里粘贴你的 User-Agent"
-
 
 # ============================================================
-# Cookie 持久化
+# 构建 session
 # ============================================================
-def load_cookie():
-    """优先从文件读 Cookie，没有则用初始值"""
-    if os.path.exists(COOKIE_FILE):
-        try:
-            with open(COOKIE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"cookie": INIT_COOKIE, "user_agent": USER_AGENT}
-
-
-def save_cookie(sess):
-    """把当前 session 的 Cookie 存到文件"""
-    cookies = {c.name: c.value for c in sess.cookies}
-    with open(COOKIE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"cookie": cookies, "user_agent": sess.headers.get("User-Agent", USER_AGENT)},
-                  f, ensure_ascii=False, indent=2)
-
-
-def build_session(cookie_data):
-    """根据 cookie 数据构造 session"""
+def build_session():
     sess = requests.Session()
     sess.headers.update({
-        "User-Agent": cookie_data.get("user_agent", USER_AGENT),
+        "User-Agent": USER_AGENT,
         "Referer": "https://m.s.weibo.com/",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "zh-CN,zh;q=0.9",
     })
-    cookie = cookie_data.get("cookie", "")
-    if isinstance(cookie, str):
-        # 兼容首次的字符串格式
-        for item in cookie.split("; "):
-            if "=" in item:
-                k, v = item.split("=", 1)
-                sess.cookies.set(k, v)
-    elif isinstance(cookie, dict):
-        for k, v in cookie.items():
+    # 解析环境变量里的 Cookie 字符串
+    for item in INIT_COOKIE.split("; "):
+        if "=" in item:
+            k, v = item.split("=", 1)
             sess.cookies.set(k, v)
     return sess
 
 
 def refresh_cookie(sess):
-    """访问微博首页刷新短期令牌，然后持久化"""
+    """访问微博首页，让服务器通过 Set-Cookie 刷新短期令牌（仅本次运行内有效）"""
     try:
         sess.get("https://m.weibo.cn/", timeout=10)
-        save_cookie(sess)
-        print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] Cookie 已刷新并保存")
+        print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] Cookie 保活刷新完成")
     except Exception as e:
         print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] 保活刷新失败: {e}")
 
@@ -86,6 +59,10 @@ def refresh_cookie(sess):
 # 时间处理
 # ============================================================
 def resolve_date(time_str, now=None):
+    """
+    把 HH:MM 解析成 YYYY-MM-DD HH:MM。
+    若 HH:MM 大于当前时刻，视为前一天（处理跨午夜窗口）。
+    """
     now = now or datetime.now()
     hh, mm = map(int, time_str.split(":"))
     candidate = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
@@ -109,6 +86,10 @@ def load_existing(filename):
 
 
 def parse_trend(data, now=None):
+    """
+    把 {"read":[...], "me":[...], "ori":[...], "partake":[...]}
+    按 time 合并并补全日期，返回按时间排序的行列表。
+    """
     merged = {}
     for key, col in METRIC_MAP.items():
         for item in data.get(key, []):
@@ -124,6 +105,10 @@ def parse_trend(data, now=None):
 
 
 def upsert_rows(rows, filename=CSV_FILE):
+    """
+    新增：时间不存在 -> 追加一行（修正列为空）
+    修正：时间已存在但数值变了 -> 原行不动，新值写入对应 _修正 列
+    """
     existing = load_existing(filename)
     new_rows = []
     updated_rows = {}
@@ -146,6 +131,7 @@ def upsert_rows(rows, filename=CSV_FILE):
             if changed:
                 updated_rows[t] = old
 
+    # 追加新行
     if new_rows:
         file_exists = os.path.exists(filename)
         with open(filename, "a", newline="", encoding="utf-8-sig") as f:
@@ -154,6 +140,7 @@ def upsert_rows(rows, filename=CSV_FILE):
                 writer.writeheader()
             writer.writerows(new_rows)
 
+    # 有修正时重写整个文件
     if updated_rows:
         all_rows = []
         for t, row in existing.items():
@@ -166,14 +153,18 @@ def upsert_rows(rows, filename=CSV_FILE):
             writer.writerows(all_rows)
 
     print(f"新增 {len(new_rows)} 行，修正 {len(updated_rows)} 行")
+    return len(new_rows), len(updated_rows)
 
 
 # ============================================================
 # 主流程（一次性执行）
 # ============================================================
 def main():
-    cookie_data = load_cookie()
-    sess = build_session(cookie_data)
+    if not INIT_COOKIE:
+        print("[错误] 环境变量 WEIBO_COOKIE 为空，请检查 GitHub Actions Secrets 配置")
+        return
+
+    sess = build_session()
     refresh_cookie(sess)
 
     try:
@@ -184,7 +175,7 @@ def main():
         data = resp.json()
         rows = parse_trend(data)
         if not rows:
-            print("未解析到趋势数据")
+            print("未解析到趋势数据，检查接口返回结构")
             return
         upsert_rows(rows)
     except Exception as e:
