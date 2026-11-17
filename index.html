@@ -756,9 +756,10 @@ function dailySeries() {
     groups.get(key).push({ dt, r });
   }
 
-  const keys = [...groups.keys()].sort().slice(-2);
+  const allKeys = [...groups.keys()].sort();
+  const keys = allKeys.slice(-7);
   const todayKey = keys.length ? keys[keys.length - 1] : null;
-  const yestKey = keys.length > 1 ? keys[keys.length - 2] : null;
+  const prevKeys = keys.slice(0, -1);
 
   const fullSlots = [];
   for (let h = 6; h <= 23; h++) fullSlots.push(`${String(h).padStart(2, "0")}:06`);
@@ -783,30 +784,39 @@ function dailySeries() {
   }
 
   const todaySlots = buildBySlot(todayKey);
-  const yestSlots = buildBySlot(yestKey);
 
   const labels = [], axisLabels = [];
   const todayData = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-  const yestData = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
 
   for (const slot of fullSlots) {
     labels.push(slot);
     axisLabels.push(slot);
     const t = todaySlots.get(slot);
-    const y = yestSlots.get(slot);
     for (const m of METRICS) {
       todayData[m].push(t ? (parseFloat(t.r[m]) || null) : null);
-      yestData[m].push(y ? (parseFloat(y.r[m]) || null) : null);
     }
   }
+
+  const prevDays = prevKeys.map(k => {
+    const slots = buildBySlot(k);
+    const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+    for (const slot of fullSlots) {
+      const p = slots.get(slot);
+      for (const m of METRICS) {
+        data[m].push(p ? (parseFloat(p.r[m]) || null) : null);
+      }
+    }
+    return { key: k, data };
+  });
 
   return {
     labels,
     axisLabels,
     data: todayData,
-    prevData: yestData,
+    prevData: prevDays.length ? prevDays[prevDays.length - 1].data : { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] },
+    prevDays,
     todayKey,
-    yestKey,
+    yestKey: prevDays.length ? prevDays[prevDays.length - 1].key : null,
     last: pickLast(groups),
     lastDay: null
   };
@@ -886,9 +896,12 @@ function renderLineChart() {
     const todayItems = LINE_FIELDS.map(f =>
       `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
     ).join("");
-    // 昨日：只显示一个灰色圆点 + 日期
-    const yestItem = `<span class="item"><span class="dot" style="background:#bbb"></span>${shortDate(series.yestKey)}</span>`;
-    legendEl.innerHTML = todayItems + "　" + yestItem;
+    // 往日：每天一个彩色渐变圆点 + 日期
+    const grad = `linear-gradient(90deg, ${LINE_FIELDS.map(f => f.color).join(", ")})`;
+    const prevItems = series.prevDays.map(d =>
+      `<span class="item"><span class="dot" style="background:${grad}"></span>${shortDate(d.key)}</span>`
+    ).join("");
+    legendEl.innerHTML = todayItems + "　" + prevItems;
   } else {
     legendEl.innerHTML =
       LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
@@ -916,18 +929,23 @@ function renderLineChart() {
         emphasis: { focus: "series" }
       });
     });
-    LINE_FIELDS.forEach(f => {
-      seriesOpt.push({
-        name: f.label + "（昨日）",
-        type: "line",
-        data: series.prevData[f.key],
-        smooth: false,
-        symbol: "circle",
-        symbolSize: 2,
-        connectNulls: false,
-        itemStyle: { color: "#bbb" },
-        lineStyle: { width: 1.5, color: "#bbb", type: "dashed" },
-        emphasis: { focus: "series" }
+    series.prevDays.forEach((day, idx) => {
+      const age = series.prevDays.length - idx;
+      const alpha = Math.max(0, 1 - 0.15 * age);
+      const dayLabel = shortDate(day.key);
+      LINE_FIELDS.forEach(f => {
+        seriesOpt.push({
+          name: `${f.label}（${dayLabel}）`,
+          type: "line",
+          data: day.data[f.key],
+          smooth: false,
+          symbol: "circle",
+          symbolSize: 2,
+          connectNulls: false,
+          itemStyle: { color: f.color, opacity: alpha },
+          lineStyle: { width: 1.5, color: f.color, opacity: alpha },
+          emphasis: { focus: "series", itemStyle: { opacity: 1 }, lineStyle: { opacity: 1 } }
+        });
       });
     });
   } else {
@@ -954,6 +972,7 @@ function renderLineChart() {
   });
   Object.values(series.data).forEach(scan);
   if (series.prevData) Object.values(series.prevData).forEach(scan);
+  if (series.prevDays) series.prevDays.forEach(d => Object.values(d.data).forEach(scan));
 
   let yMin, yMax;
   if (!isFinite(min) || !isFinite(max)) {
@@ -1004,17 +1023,11 @@ function renderLineChart() {
           return html;
         }
 
-        // 日榜：固定顺序，昨日 / 今日各自“值 / 涨幅”
-        const todayVals = {};
-        const yestVals = {};
-        params.forEach(p => {
-          const name = p.seriesName;
-          if (name.endsWith("（今日）")) {
-            todayVals[name.replace("（今日）", "")] = p.value;
-          } else if (name.endsWith("（昨日）")) {
-            yestVals[name.replace("（昨日）", "")] = p.value;
-          }
-        });
+        // 日榜：固定顺序，各历史日 / 今日各自“值 / 涨幅”
+        const dayCols = series.prevDays.map(d =>
+          ({ key: d.key, label: shortDate(d.key), arr: d.data })
+        );
+        dayCols.push({ key: "today", label: "今日", arr: series.data });
 
         const deltaFor = (arr, idx) => {
           const cur = arr[idx];
@@ -1033,51 +1046,47 @@ function renderLineChart() {
           };
         };
 
-        const renderRow = (labelText, color, key, todayArr, yestArr) => {
-          const tv = todayVals[key];
-          const yv = yestVals[key];
-          const hasToday = tv !== null && tv !== undefined;
-          const hasYest = yv !== null && yv !== undefined;
+        const colW = 76;
+        const minW = 110 + dayCols.length * (colW + 8);
 
-          const td = hasToday ? deltaFor(todayArr, i) : null;
-          const yd = hasYest ? deltaFor(yestArr, i) : null;
-          const tdd = fmtDelta(td);
-          const ydd = fmtDelta(yd);
-          const yColor = (yd !== null && yd !== undefined && !isNaN(yd) && yd > 0) ? "#fa8c16" : "#999";
-
-          const todayStr = hasToday ? tv : "-";
-          const yestStr = hasYest ? yv : "-";
-
-          return `<div style="display:flex;align-items:center;gap:12px;min-width:300px;line-height:20px;">`
+        const renderRow = (labelText, color, key) => {
+          const cols = dayCols.map(col => {
+            const arr = col.arr[key];
+            const v = arr ? arr[i] : null;
+            const has = v !== null && v !== undefined;
+            const d = has ? deltaFor(arr, i) : null;
+            const fd = fmtDelta(d);
+            const isToday = col.key === "today";
+            const dColor = (d !== null && d !== undefined && !isNaN(d) && d > 0)
+              ? (isToday ? "#ea3690" : "#fa8c16")
+              : "#999";
+            const vColor = isToday ? "#333" : "#888";
+            return `<span style="width:${colW}px;text-align:right;white-space:nowrap;">`
+              + `<span style="color:${vColor};font-weight:${isToday ? "bold" : "normal"};">${has ? v : "-"}</span>`
+              + ` / <span style="color:${dColor};">${fd.text}</span></span>`;
+          }).join("");
+          return `<div style="display:flex;align-items:center;gap:8px;min-width:${minW}px;line-height:20px;">`
             + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
             + `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};"></span>`
             + `<span>${labelText}</span>`
             + `</span>`
-            + `<span style="width:100px;text-align:right;color:#bbb;">${yestStr} / <span style="color:${yColor};font-weight:bold;">${ydd.text}</span></span>`
-            + `<span style="width:100px;text-align:right;font-weight:bold;color:#333;">${todayStr} / <span style="color:${tdd.color};">${tdd.text}</span></span>`
+            + cols
             + `</div>`;
         };
 
         // 表头
-        html += `<div style="display:flex;align-items:center;gap:12px;min-width:300px;line-height:18px;color:#bbb;font-size:11px;">`
+        html += `<div style="display:flex;align-items:center;gap:8px;min-width:${minW}px;line-height:18px;color:#bbb;font-size:11px;">`
           + `<span style="flex:1;">指标</span>`
-          + `<span style="width:100px;text-align:right;">昨日</span>`
-          + `<span style="width:100px;text-align:right;">今日</span>`
+          + dayCols.map(col => `<span style="width:${colW}px;text-align:right;">${col.label}</span>`).join("")
           + `</div>`;
 
         // 总分
         const totalField = LINE_FIELDS[0];
-        html += renderRow(
-          totalField.label, totalField.color, totalField.label,
-          series.data[totalField.key], series.prevData[totalField.key]
-        );
+        html += renderRow(totalField.label, totalField.color, totalField.key);
         html += `<div style="height:1px;background:#f3e6ee;margin:4px 0;"></div>`;
         // 三维度
         LINE_FIELDS.slice(1).forEach(f => {
-          html += renderRow(
-            f.label, f.color, f.label,
-            series.data[f.key], series.prevData[f.key]
-          );
+          html += renderRow(f.label, f.color, f.key);
         });
 
         return html;
