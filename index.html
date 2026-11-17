@@ -445,36 +445,67 @@ function computeHeadlineDeltas() {
     }
   }
 
+    // —— 周榜涨幅：按业务日取相邻两天 00:06 的差值 ——
+  // 周一：周一00:26 - 周二00:06
+  // 周二~周六：次日00:06 - 当天00:06
+  // 周日：周一00:16 - 周日00:06
+  const WEEKDAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+  // 找“当天 00:06”的记录（优先非周一，因为周一基准是 00:26）
+  function findAt(dayStr, hh, mm) {
+    for (const r of weeklyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    if (dateKey(dt) === dayStr && dt.getHours() === hh && dt.getMinutes() === mm) {
+      return { dt, r };
+    }
+    }
+    return null;
+  }
+
+  // 找最新一条周榜记录，作为“当前点”
   let latestW = null;
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
     if (!latestW || dt > latestW.dt) latestW = { dt, r };
   }
+
   if (latestW) {
-    const d = new Date(latestW.dt);
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    const weekKey = dateKey(d);
-    let monday026 = null;
-    for (const r of weeklyRows) {
-      const dt = parseTime(r["时间"]);
-      if (!dt) continue;
-      if (dateKey(dt) === weekKey && dt.getHours() === 0 && dt.getMinutes() === 26) {
-        monday026 = { dt, r };
-        break;
-      }
+    const curDt = latestW.dt;
+    const curDayStr = dateKey(curDt);
+    const curWeekday = curDt.getDay(); // 0=周日, 1=周一, ..., 6=周六
+    const isMonday = curWeekday === 1;
+
+    // 当前点：周一取 00:26，其余取 00:06
+    const curHour = isMonday ? 0 : 0;
+    const curMin = isMonday ? 26 : 6;
+    const cur = findAt(curDayStr, curHour, curMin);
+
+    if (cur) {
+    // 基准点：次日
+    const nextDay = new Date(curDt);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = dateKey(nextDay);
+
+    let baseHour = 0, baseMin = 6;
+    if (curWeekday === 0) {        // 周日 -> 次日(周一)00:16
+      baseHour = 0; baseMin = 16;
+    } else {                       // 周一~周六 -> 次日00:06
+      baseHour = 0; baseMin = 6;
     }
-    if (monday026) {
-      const a = num(latestW.r["综合得分"]);
-      const b = num(monday026.r["综合得分"]);
+    const base = findAt(nextDayStr, baseHour, baseMin);
+
+    if (base) {
+      const a = num(cur.r["综合得分"]);
+      const b = num(base.r["综合得分"]);
       if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
       DIMS.forEach(d => {
-        const x = num(latestW.r[d]);
-        const y = num(monday026.r[d]);
+        const x = num(cur.r[d]);
+        const y = num(base.r[d]);
         if (x !== null && y !== null) weeklyDimDeltas[d] = (x - y).toFixed(2);
       });
+    }
     }
   }
   return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas };
@@ -674,8 +705,11 @@ function dailySeries() {
   for (const k of keys) {
     const list = groups.get(k)
       .filter(x => {
-        const m = x.dt.getHours() * 60 + x.dt.getMinutes();
-        return m >= 6 * 60 + 6;
+        const h = x.dt.getHours();
+        const m = x.dt.getMinutes();
+        // 00:16 属于前一个业务日，保留；其余保留 06:06 及以后
+        if (h === 0 && m === 16) return true;
+        return h * 60 + m >= 6 * 60 + 6;
       })
       .sort((a, b) => a.dt - b.dt);
     if (list.length) lastDay = list[list.length - 1].dt;
@@ -930,7 +964,7 @@ function renderRadarChart() {
       startAngle: -90,
       indicator: indicators,
       center: ["50%", "44%"],
-      radius: "78%",
+      radius: "72%",
       axisName: {
         formatter: function (name) {
           const idx = indicators.findIndex(x => x.name === name);
