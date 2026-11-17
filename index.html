@@ -544,7 +544,11 @@ function computeHeadlineDeltas() {
   const dailyTargetNeed = {};
   DIMS.forEach(d => {
     const cur = latestPoint ? parseFloat(latestPoint.r[d]) : NaN;
-    dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
+    if(TARGET[d] <= cur) {
+      dailyTargetNeed[d] = '达成'
+    } else {
+      dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
+    }
   });
 
   return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas, dailyTargetNeed };
