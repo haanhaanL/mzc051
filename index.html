@@ -697,37 +697,61 @@ function dailySeries() {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ dt, r });
   }
-  const keys = [...groups.keys()].sort().slice(-7);
-  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-  const labels = [], axisLabels = [];
-  let lastDay = null;
+
+  // 只取最近两个业务日：今日、昨日
+  const keys = [...groups.keys()].sort().slice(-2);
+  const todayKey = keys.length ? keys[keys.length - 1] : null;
+  const yestKey = keys.length > 1 ? keys[keys.length - 2] : null;
+
   const fullSlots = [];
   for (let h = 6; h <= 23; h++) fullSlots.push(`${String(h).padStart(2, "0")}:06`);
   fullSlots.push("00:16");
-  const bySlot = new Map();
-  for (const k of keys) {
-    const list = groups.get(k)
+
+  // 每个业务日各自按槽位取数
+  function buildBySlot(dayKey) {
+    const bySlot = new Map();
+    if (!dayKey) return bySlot;
+    const list = groups.get(dayKey)
       .filter(x => {
         const h = x.dt.getHours();
         const m = x.dt.getMinutes();
-        // 00:16 属于前一个业务日，保留；其余保留 06:06 及以后
         if (h === 0 && m === 16) return true;
         return h * 60 + m >= 6 * 60 + 6;
       })
       .sort((a, b) => a.dt - b.dt);
-    if (list.length) lastDay = list[list.length - 1].dt;
     for (const { dt, r } of list) {
       const slot = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
       if (!bySlot.has(slot)) bySlot.set(slot, { dt, r });
     }
+    return bySlot;
   }
+
+  const todaySlots = buildBySlot(todayKey);
+  const yestSlots = buildBySlot(yestKey);
+
+  const labels = [], axisLabels = [];
+  const todayData = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+  const yestData = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
+
   for (const slot of fullSlots) {
     labels.push(slot);
     axisLabels.push(slot);
-    const hit = bySlot.get(slot);
-    for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
+    const t = todaySlots.get(slot);
+    const y = yestSlots.get(slot);
+    for (const m of METRICS) {
+      todayData[m].push(t ? (parseFloat(t.r[m]) || null) : null);
+      yestData[m].push(y ? (parseFloat(y.r[m]) || null) : null);
+    }
   }
-  return { labels, axisLabels, data, last: pickLast(groups), lastDay };
+
+  return {
+    labels,
+    axisLabels,
+    data: todayData,        // 今日（原色）
+    prevData: yestData,     // 昨日（灰色）
+    last: pickLast(groups),
+    lastDay: null
+  };
 }
 
 function weeklySeries() {
@@ -797,26 +821,70 @@ function deltaAt(series, idx, key) {
 
 function renderLineChart() {
   const series = lineTab === "daily" ? dailySeries() : weeklySeries();
-  document.getElementById("lineLegend").innerHTML =
-    LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
+  if (lineTab === "daily") {
+    const todayLegend = LINE_FIELDS.map(f =>
+      `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}（今日）</span>`
+    ).join("");
+    const yestLegend = LINE_FIELDS.map(f =>
+      `<span class="item"><span class="dot" style="background:#bbb"></span>${f.label}（昨日）</span>`
+    ).join("");
+    document.getElementById("lineLegend").innerHTML = todayLegend + "<br>" + yestLegend;
+  } else {
+    document.getElementById("lineLegend").innerHTML =
+      LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
+  }
 
     const titleEl = document.getElementById("lineTitle");
     titleEl.textContent = lineTab === "daily" ? "分数趋势 · 日榜" : "分数趋势 · 周榜";
 
   if (!chartLine) chartLine = echarts.init(document.getElementById("chartLine"));
 
-  const seriesOpt = LINE_FIELDS.map(f => ({
-    name: f.label,
-    type: "line",
-    data: series.data[f.key],
-    smooth: false,
-    symbol: "circle",
-    symbolSize: 3,
-    connectNulls: false,
-    itemStyle: { color: f.color },
-    lineStyle: { width: 2, color: f.color },
-    emphasis: { focus: "series" }
-  }));
+  let seriesOpt;
+  if (lineTab === "daily") {
+    // 今日：原色；昨日：灰色
+    seriesOpt = [];
+    LINE_FIELDS.forEach(f => {
+      seriesOpt.push({
+        name: f.label + "（今日）",
+        type: "line",
+        data: series.data[f.key],
+        smooth: false,
+        symbol: "circle",
+        symbolSize: 3,
+        connectNulls: false,
+        itemStyle: { color: f.color },
+        lineStyle: { width: 2, color: f.color },
+        emphasis: { focus: "series" }
+      });
+    });
+    LINE_FIELDS.forEach(f => {
+      seriesOpt.push({
+        name: f.label + "（昨日）",
+        type: "line",
+        data: series.prevData[f.key],
+        smooth: false,
+        symbol: "circle",
+        symbolSize: 2,
+        connectNulls: false,
+        itemStyle: { color: "#bbb" },
+        lineStyle: { width: 1.5, color: "#bbb", type: "dashed" },
+        emphasis: { focus: "series" }
+      });
+    });
+  } else {
+    seriesOpt = LINE_FIELDS.map(f => ({
+      name: f.label,
+      type: "line",
+      data: series.data[f.key],
+      smooth: false,
+      symbol: "circle",
+      symbolSize: 3,
+      connectNulls: false,
+      itemStyle: { color: f.color },
+      lineStyle: { width: 2, color: f.color },
+      emphasis: { focus: "series" }
+    }));
+  }
 
   let min = Infinity, max = -Infinity;
   Object.values(series.data).forEach(arr => arr.forEach(v => {
