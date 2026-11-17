@@ -495,18 +495,18 @@ function computeHeadlineDeltas() {
         for (const r of weeklyRows) {
           const dt = parseTime(r["时间"]);
           if (!dt) continue;
-          if (dt <= target && (!base || dt > base.dt)) base = { dt, r };
+          if (dt <= target && dt > cur.dt && (!base || dt > base.dt)) base = { dt, r };
         }
       }
 
       if (base) {
         const a = num(cur.r["综合得分"]);
         const b = num(base.r["综合得分"]);
-        if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
+        if (a !== null && b !== null) weeklyDelta = (b - a).toFixed(2);
         DIMS.forEach(d => {
           const x = num(cur.r[d]);
           const y = num(base.r[d]);
-          if (x !== null && y !== null) weeklyDimDeltas[d] = (x - y).toFixed(2);
+          if (x !== null && y !== null) weeklyDimDeltas[d] = (y - x).toFixed(2);
         });
       }
     }
