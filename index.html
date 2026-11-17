@@ -968,7 +968,7 @@ function renderLineChart() {
           if (d === null || d === undefined || isNaN(d)) return { text: "-", color: "#999" };
           return {
             text: (d > 0 ? "+" : "") + d.toFixed(2),
-            color: d > 0 ? "#ea3690" : (d < 0 ? "#27ae60" : "#999")
+            color: d > 0 ? "#ea3690" : "#999"
           };
         };
 
@@ -982,6 +982,7 @@ function renderLineChart() {
           const yd = hasYest ? deltaFor(yestArr, i) : null;
           const tdd = fmtDelta(td);
           const ydd = fmtDelta(yd);
+          const yColor = (yd !== null && yd !== undefined && !isNaN(yd) && yd > 0) ? "#fa8c16" : "#999";
 
           const todayStr = hasToday ? tv : "-";
           const yestStr = hasYest ? yv : "-";
@@ -991,7 +992,7 @@ function renderLineChart() {
             + `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};"></span>`
             + `<span>${labelText}</span>`
             + `</span>`
-            + `<span style="width:100px;text-align:right;color:#bbb;">${yestStr} / <span style="color:${ydd.color};font-weight:bold;">${ydd.text}</span></span>`
+            + `<span style="width:100px;text-align:right;color:#bbb;">${yestStr} / <span style="color:${yColor};font-weight:bold;">${ydd.text}</span></span>`
             + `<span style="width:100px;text-align:right;font-weight:bold;color:#333;">${todayStr} / <span style="color:${tdd.color};">${tdd.text}</span></span>`
             + `</div>`;
         };
