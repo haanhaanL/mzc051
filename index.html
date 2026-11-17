@@ -896,10 +896,9 @@ function renderLineChart() {
     const todayItems = LINE_FIELDS.map(f =>
       `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
     ).join("");
-    // 往日：每天一个彩色渐变圆点 + 日期
-    const grad = `linear-gradient(90deg, ${LINE_FIELDS.map(f => f.color).join(", ")})`;
+    // 往日：每天一个总分颜色圆点 + 日期
     const prevItems = series.prevDays.map(d =>
-      `<span class="item"><span class="dot" style="background:${grad}"></span>${shortDate(d.key)}</span>`
+      `<span class="item"><span class="dot" style="background:${LINE_FIELDS[0].color}"></span>${shortDate(d.key)}</span>`
     ).join("");
     legendEl.innerHTML = todayItems + "　" + prevItems;
   } else {
@@ -931,7 +930,7 @@ function renderLineChart() {
     });
     series.prevDays.forEach((day, idx) => {
       const age = series.prevDays.length - idx;
-      const alpha = Math.max(0, 1 - 0.15 * age);
+      const alpha = Math.max(0.3, 1 - 0.3 * age);
       const dayLabel = shortDate(day.key);
       LINE_FIELDS.forEach(f => {
         seriesOpt.push({
@@ -943,7 +942,7 @@ function renderLineChart() {
           symbolSize: 2,
           connectNulls: false,
           itemStyle: { color: f.color, opacity: alpha },
-          lineStyle: { width: 1.5, color: f.color, opacity: alpha },
+          lineStyle: { width: 1.5, color: f.color, opacity: alpha, type: "dashed" },
           emphasis: { focus: "series", itemStyle: { opacity: 1 }, lineStyle: { opacity: 1 } }
         });
       });
