@@ -821,15 +821,10 @@ function renderLineChart() {
   const legendEl = document.getElementById("lineLegend");
 
   if (lineTab === "daily") {
-    // 今日：彩色圆点 + 名称 + 当前值（今日该系列最后一个非空点）
-    const todayItems = LINE_FIELDS.map(f => {
-      const arr = series.data[f.key] || [];
-      let v = null;
-      for (let i = arr.length - 1; i >= 0; i--) {
-        if (arr[i] !== null && arr[i] !== undefined) { v = arr[i]; break; }
-      }
-      return `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label} <b style="color:${f.color}">${v !== null ? v : "-"}</b></span>`;
-    }).join("");
+    // 今日：只显示彩色圆点 + 名称
+    const todayItems = LINE_FIELDS.map(f =>
+      `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
+    ).join("");
     // 昨日：只显示一个灰色圆点 + 日期
     const yestItem = `<span class="item"><span class="dot" style="background:#bbb"></span>${shortDate(series.yestKey)}</span>`;
     legendEl.innerHTML = todayItems + "　" + yestItem;
@@ -1070,11 +1065,12 @@ function renderRadarChart() {
 
   const { dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
   const dimDeltas = radarTab === "daily" ? dailyDimDeltas : weeklyDimDeltas;
+  const isDaily = radarTab === "daily";
 
   const dims = RADAR_METRICS.map(name => ({ name, key: name }));
   const indicators = dims.map(d => ({ name: d.name, max: 100 }));
 
-  // 三维度目标值
+  // 三维度目标值（仅日榜使用）
   const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
   const targetValues = dims.map(d => TARGET[d.key] ?? 0);
 
@@ -1085,7 +1081,9 @@ function renderRadarChart() {
 
   document.getElementById("radarLegend").innerHTML =
     `<span class="item" style="color:#ea3690;font-weight:bold;">最近一条：${fmtTime(last.dt)}</span>`
-    + `<span class="item" style="margin-left:12px;"><span class="dot" style="background:#ffb6d9"></span>目标</span>`;
+    + (isDaily
+      ? `<span class="item" style="margin-left:12px;"><span class="dot" style="background:#ffb6d9"></span>目标</span>`
+      : "");
 
   const radarTotalEl = document.getElementById("radarTotal");
   if (radarTotalEl) {
@@ -1094,6 +1092,15 @@ function renderRadarChart() {
       `<span class="radar-total-value">${totalVal || "-"}</span>`
       + `<span class="radar-total-label">总分</span>`;
   }
+
+  // 目标系列（仅日榜）
+  const targetSeries = isDaily ? [{
+    value: targetValues,
+    name: "目标",
+    lineStyle: { width: 2, type: "solid", color: "#ffb6d9" },
+    itemStyle: { color: "#ffb6d9" },
+    areaStyle: { color: "transparent" }
+  }] : [];
 
   chartRadar.setOption({
     tooltip: {
@@ -1105,7 +1112,6 @@ function renderRadarChart() {
         dims.forEach((d, i) => {
           const val = parseFloat(last.r[d.key]);
           const valText = isNaN(val) ? "-" : val;
-          const tgt = targetValues[i];
 
           // 涨幅
           const raw = dimDeltas[d.key] || "-";
@@ -1118,28 +1124,33 @@ function renderRadarChart() {
             }
           }
 
-          // 与目标差值（当前 - 目标）
-          let gapText = "-", gapColor = "#999";
-          if (!isNaN(val)) {
-            const gap = val - tgt;
-            gapText = (gap > 0 ? "+" : "") + gap.toFixed(2);
-            gapColor = gap >= 0 ? "#27ae60" : "#ea3690"; // 达标绿色，未达粉色
+          // 与目标差值（仅日榜）
+          let gapHtml = "";
+          if (isDaily) {
+            const tgt = targetValues[i];
+            let gapText = "-", gapColor = "#999";
+            if (!isNaN(val)) {
+              const gap = val - tgt;
+              gapText = (gap > 0 ? "+" : "") + gap.toFixed(2);
+              gapColor = gap >= 0 ? "#27ae60" : "#ea3690";
+            }
+            gapHtml = `<span style="width:64px;text-align:right;color:${gapColor};font-weight:bold;">${gapText}</span>`;
           }
 
           html += `<div style="display:flex;align-items:center;gap:10px;min-width:300px;line-height:22px;font-size:12px;">`
             + `<span style="width:60px;color:#999;">${d.name}</span>`
             + `<span style="width:44px;text-align:right;font-weight:bold;color:#333;">${valText}</span>`
             + `<span style="width:56px;text-align:right;color:${deltaColor};font-weight:bold;">${deltaText}</span>`
-            + `<span style="width:64px;text-align:right;color:${gapColor};font-weight:bold;">${gapText}</span>`
+            + gapHtml
             + `</div>`;
         });
 
-        // 表头
+        // 表头（目标差列仅日榜）
         html = `<div style="display:flex;align-items:center;gap:10px;min-width:300px;line-height:18px;color:#bbb;font-size:11px;margin-bottom:4px;">`
           + `<span style="width:60px;">维度</span>`
           + `<span style="width:44px;text-align:right;">分数</span>`
           + `<span style="width:56px;text-align:right;">涨幅</span>`
-          + `<span style="width:64px;text-align:right;">目标差</span>`
+          + (isDaily ? `<span style="width:64px;text-align:right;">目标差</span>` : "")
           + `</div>` + html;
 
         return html;
@@ -1171,19 +1182,7 @@ function renderRadarChart() {
       type: "radar",
       symbol: "none",
       data: [
-        // 目标值：浅粉实线（底层）
-        {
-          value: targetValues,
-          name: "目标",
-          lineStyle: {
-            width: 2,
-            type: "solid",
-            color: "#ffb6d9"
-          },
-          itemStyle: { color: "#ffb6d9" },
-          areaStyle: { color: "transparent" }
-        },
-        // 当前最新值：渐变粗线（上层）
+        ...targetSeries,
         {
           value,
           name: "最新",
