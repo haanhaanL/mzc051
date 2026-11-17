@@ -49,6 +49,28 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .headline-deltas .down { color: #27ae60; }
 .headline-deltas .flat { color: #999; }
 
+.headline-deltas .delta-sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: rgba(234,54,144,0.18);
+    margin: 5px 0;
+}
+.headline-deltas .delta-target-label,
+.headline-deltas .delta-need-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: normal;
+    white-space: nowrap;
+}
+.headline-deltas .target-line .target-val {
+    color: #ea3690;
+    font-weight: bold;
+}
+.headline-deltas .need-line .need-val {
+    color: #fa8c16;
+    font-weight: bold;
+}
+
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
     padding: 12px 0; overflow: hidden; border: 1px solid rgba(234,54,144,0.10);
@@ -508,11 +530,27 @@ function computeHeadlineDeltas() {
       }
     }
   }
-  return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas };
+
+  // —— 日榜目标需求：目标值 − 最新分数，除以今日剩余小时数 ——
+  const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
+  let latestD = null;
+  for (const r of dailyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    if (!latestD || dt > latestD.dt) latestD = { dt, r };
+  }
+  const remainHours = latestD ? Math.max(1, 24 - latestD.dt.getHours()) : 1;
+  const dailyTargetNeed = {};
+  DIMS.forEach(d => {
+    const cur = latestD ? parseFloat(latestD.r[d]) : NaN;
+    dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
+  });
+
+  return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas, dailyTargetNeed };
 }
 
 function renderHeadlineDeltas() {
-  const { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
+  const { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas, dailyTargetNeed } = computeHeadlineDeltas();
   const el = document.getElementById("headlineDeltas");
   if (!el) return;
   const DIMS = ["播放热度", "畅销度", "推荐度"];
@@ -537,6 +575,21 @@ function renderHeadlineDeltas() {
       + dimsHtml
       + `</div>`;
   };
+
+  const targetLine = `<div class="delta-line target-line">`
+    + `<span class="delta-target-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">今日日榜目标</span>`
+    + DIMS.map(d =>
+        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 98 : 96}</span>`
+      ).join("")
+    + `</div>`;
+
+  const needLine = `<div class="delta-line need-line">`
+    + `<span class="delta-need-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">每小时涨幅需求</span>`
+    + DIMS.map(d =>
+        `<span class="delta-dim need-val">${dailyTargetNeed[d] === "-" ? "-" : dailyTargetNeed[d]}</span>`
+      ).join("")
+    + `</div>`;
+
   el.innerHTML =
     `<div class="delta-box">`
     + `<div class="delta-head">`
@@ -547,6 +600,9 @@ function renderHeadlineDeltas() {
     + `</div>`
     + buildLine("日榜", dailyDelta, dailyDimDeltas, "daily")
     + buildLine("周榜", weeklyDelta, weeklyDimDeltas, "weekly")
+    + `<div class="delta-sep"></div>`
+    + targetLine
+    + needLine
     + `</div>`;
 }
 
