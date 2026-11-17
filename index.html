@@ -1081,9 +1081,9 @@ function renderRadarChart() {
 
   // 图例：最新数据 + 目标（换行显示）
   document.getElementById("radarLegend").innerHTML =
-    `<div class="item" style="color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
+    `<div class="item" style="display:block;color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
     + (isDaily
-      ? `<div class="item" style="margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销98 播放90</div>`
+      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销98 播放90</div>`
       : "");
 
   const radarTotalEl = document.getElementById("radarTotal");
