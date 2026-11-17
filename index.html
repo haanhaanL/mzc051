@@ -474,38 +474,41 @@ function computeHeadlineDeltas() {
   if (latestW) {
     const curDt = latestW.dt;
     const curDayStr = dateKey(curDt);
-    const curWeekday = curDt.getDay(); // 0=周日, 1=周一, ..., 6=周六
+    const curWeekday = curDt.getDay();
     const isMonday = curWeekday === 1;
 
-    // 当前点：周一取 00:26，其余取 00:06
-    const curHour = isMonday ? 0 : 0;
-    const curMin = isMonday ? 26 : 6;
-    const cur = findAt(curDayStr, curHour, curMin);
+    // 当前点：精确命中，周一 00:26，其余 00:06
+    const cur = findAt(curDayStr, 0, isMonday ? 26 : 6);
 
     if (cur) {
-    // 基准点：次日
-    const nextDay = new Date(curDt);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayStr = dateKey(nextDay);
+      const nextDay = new Date(cur.dt);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = dateKey(nextDay);
+      const baseHour = 0;
+      const baseMin = curWeekday === 0 ? 16 : 6;
 
-    let baseHour = 0, baseMin = 6;
-    if (curWeekday === 0) {        // 周日 -> 次日(周一)00:16
-      baseHour = 0; baseMin = 16;
-    } else {                       // 周一~周六 -> 次日00:06
-      baseHour = 0; baseMin = 6;
-    }
-    const base = findAt(nextDayStr, baseHour, baseMin);
+      // 基准点：先精确找次日 00:06（周日 00:16），找不到就往前找最近一条
+      let base = findAt(nextDayStr, baseHour, baseMin);
+      if (!base) {
+        const target = new Date(nextDay);
+        target.setHours(baseHour, baseMin, 0, 0);
+        for (const r of weeklyRows) {
+          const dt = parseTime(r["时间"]);
+          if (!dt) continue;
+          if (dt <= target && (!base || dt > base.dt)) base = { dt, r };
+        }
+      }
 
-    if (base) {
-      const a = num(cur.r["综合得分"]);
-      const b = num(base.r["综合得分"]);
-      if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
-      DIMS.forEach(d => {
-        const x = num(cur.r[d]);
-        const y = num(base.r[d]);
-        if (x !== null && y !== null) weeklyDimDeltas[d] = (x - y).toFixed(2);
-      });
-    }
+      if (base) {
+        const a = num(cur.r["综合得分"]);
+        const b = num(base.r["综合得分"]);
+        if (a !== null && b !== null) weeklyDelta = (a - b).toFixed(2);
+        DIMS.forEach(d => {
+          const x = num(cur.r[d]);
+          const y = num(base.r[d]);
+          if (x !== null && y !== null) weeklyDimDeltas[d] = (x - y).toFixed(2);
+        });
+      }
     }
   }
   return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas };
