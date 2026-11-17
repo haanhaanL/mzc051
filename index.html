@@ -908,7 +908,7 @@ function renderLineChart() {
     // 往日：每天一个总分颜色（随天数降低饱和度和透明度）圆点 + 日期
     const prevItems = series.prevDays.map((d, idx) => {
       const age = series.prevDays.length - idx;
-      const faded = mixColor(LINE_FIELDS[0].color, Math.min(1, 0.25 * age));
+      const faded = mixColor(LINE_FIELDS[0].color, Math.min(1, 0.4 + 0.12 * (age - 1)));
       const alpha = 0.75;
       return `<span class="item"><span class="dot" style="background:${faded};opacity:${alpha}"></span>${shortDate(d.key)}</span>`;
     }).join("");
@@ -942,7 +942,7 @@ function renderLineChart() {
     });
     series.prevDays.forEach((day, idx) => {
       const age = series.prevDays.length - idx;
-      const fade = Math.min(1, 0.25 * age);
+      const fade = Math.min(1, 0.4 + 0.12 * (age - 1));
       const alpha = 0.75;
       const dayLabel = shortDate(day.key);
       LINE_FIELDS.forEach(f => {
@@ -1060,12 +1060,12 @@ function renderLineChart() {
         };
 
         const compact = window.innerWidth < 900;
-        const dateW = compact ? 44 : 52;
-        const metW = compact ? 74 : 92;
-        const gapW = compact ? 8 : 14;
+        const dateW = compact ? 40 : 52;
+        const metW = compact ? 64 : 92;
+        const gapW = compact ? 5 : 14;
         const fontSize = compact ? 10 : 12;
         const headSize = compact ? 9 : 11;
-        const dotSize = compact ? 5 : 7;
+        const dotSize = compact ? 4 : 7;
         const minW = dateW + 4 + (LINE_FIELDS.length - 1) * gapW + LINE_FIELDS.length * (metW + 8);
 
         // 表头：指标名称（带彩色圆点），日期与总分间距小，维度列间距大
@@ -1250,7 +1250,7 @@ function renderRadarChart() {
       shape: "circle",
       startAngle: -90,
       indicator: indicators,
-      center: ["50%", "44%"],
+      center: ["50%", "40%"],
       radius: "72%",
       axisName: {
         formatter: function (name) {
