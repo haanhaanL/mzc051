@@ -531,18 +531,19 @@ function computeHeadlineDeltas() {
     }
   }
 
-  // —— 日榜目标需求：目标值 − 最新分数，除以今日剩余小时数 ——
+  // —— 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
   const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
-  let latestD = null;
+  let latestPoint = null; // 最新一条 xx:06 数据
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
-    if (!latestD || dt > latestD.dt) latestD = { dt, r };
+    if (dt.getMinutes() !== 6) continue;      // 只读整点6分
+    if (!latestPoint || dt > latestPoint.dt) latestPoint = { dt, r };
   }
-  const remainHours = latestD ? Math.max(1, 24 - latestD.dt.getHours()) : 1;
+  const remainHours = latestPoint ? Math.max(1, 24 - latestPoint.dt.getHours()) : 1;
   const dailyTargetNeed = {};
   DIMS.forEach(d => {
-    const cur = latestD ? parseFloat(latestD.r[d]) : NaN;
+    const cur = latestPoint ? parseFloat(latestPoint.r[d]) : NaN;
     dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
   });
 
