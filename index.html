@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>mzc051-阴天也会有烦恼吗</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <link rel="icon" href="data:,">
 <style>
 html, body { height: 100%; margin: 0; padding: 0; }
@@ -95,6 +96,20 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
 }
 .table-card .title-row .mode-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
+
+.export-btn {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    border: 1px solid rgba(234,54,144,0.35); background: white; color: #ea3690;
+    font-size: 11px; padding: 2px 10px; border-radius: 12px;
+    cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
+}
+.export-btn:disabled { color: #bbb; border-color: #ddd; cursor: default; }
+.table-card .title-row .mode-tabs { right: 64px; }
+.chart-card { position: relative; }
+.chart-title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.chart-title-row .export-btn {
+    position: static; transform: none; top: auto;
+}
 
 .table-scroll-box {
     width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -261,6 +276,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .table-card .title-row { justify-content: flex-start; }
     .table-card .title-row .title { text-align: left; }
     .table-card .title-row .mode-tabs { position: static; transform: none; margin-left: auto; }
+    .table-card .title-row .export-btn { position: static; transform: none; margin-left: 8px; }
 }
 
 #global-watermark {
@@ -289,6 +305,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
             <button class="mode-btn active" data-mode="official">官方</button>
             <button class="mode-btn" data-mode="hourly">每小时</button>
           </div>
+          <button class="export-btn">导出</button>
         </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="data-table">
@@ -323,6 +340,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
             <button class="mode-btn" data-dim="畅销度">畅销度</button>
             <button class="mode-btn" data-dim="推荐度">推荐度</button>
           </div>
+          <button class="export-btn">导出</button>
         </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="dims-table" style="min-width:640px;">
@@ -340,7 +358,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
     <div class="charts-row">
       <div class="card chart-card">
-        <div class="title" id="lineTitle">分数趋势</div>
+        <div class="chart-title-row">
+          <div class="title" id="lineTitle">分数趋势</div>
+          <button class="export-btn">导出</button>
+        </div>
         <div class="range-tabs" data-chart="lineRange">
           <button class="range-btn active" data-range="daily">日榜</button>
           <button class="range-btn" data-range="weekly">周榜</button>
@@ -350,7 +371,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       </div>
 
       <div class="card chart-card">
-        <div class="title">三维度</div>
+        <div class="chart-title-row">
+          <div class="title">三维度</div>
+          <button class="export-btn">导出</button>
+        </div>
         <div class="range-tabs" data-chart="radarRange">
           <button class="range-btn active" data-range="daily">日榜</button>
           <button class="range-btn" data-range="weekly">周榜</button>
@@ -528,7 +552,7 @@ function computeHeadlineDeltas() {
   }
 
   // —— 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
-  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
   let latestPoint = null; // 最新一条 xx:06 数据
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -580,7 +604,7 @@ function renderHeadlineDeltas() {
   const targetLine = `<div class="delta-line target-line">`
     + `<span class="delta-target-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">今日日榜目标</span>`
     + DIMS.map(d =>
-        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 99.1 : 96}</span>`
+        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 98 : 96}</span>`
       ).join("")
     + `</div>`;
 
@@ -1123,7 +1147,7 @@ function renderRadarChart() {
   const indicators = dims.map(d => ({ name: d.name, max: 100 }));
 
   // 三维度目标值（仅日榜使用）
-  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
   const targetValues = dims.map(d => TARGET[d.key] ?? 0);
 
   const value = dims.map(d => {
@@ -1135,7 +1159,7 @@ function renderRadarChart() {
   document.getElementById("radarLegend").innerHTML =
     `<div class="item" style="display:block;color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
     + (isDaily
-      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销99.1 播放90</div>`
+      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销98 播放90</div>`
       : "");
 
   const radarTotalEl = document.getElementById("radarTotal");
@@ -1356,6 +1380,37 @@ document.querySelectorAll('#dimsTabs .mode-btn').forEach(btn => {
     this.classList.add("active");
     dimsTab = this.dataset.dim;
     renderDimsTable();
+  });
+});
+
+function exportName(card) {
+  let base = "";
+  const t = card.querySelector(".title");
+  if (t) base = t.textContent.split("·")[0].trim();
+  const act = card.querySelector(".range-btn.active, .mode-btn.active");
+  if (act) {
+    if (act.dataset.range) base += "-" + (act.dataset.range === "daily" ? "日榜" : "周榜");
+    else if (act.textContent) base += "-" + act.textContent;
+  }
+  const p = n => String(n).padStart(2, "0");
+  const now = new Date();
+  return `${base}-${now.getMonth() + 1}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}`;
+}
+
+document.querySelectorAll(".export-btn").forEach(btn => {
+  btn.addEventListener("click", function () {
+    if (typeof html2canvas !== "function") return;
+    const card = this.closest(".card");
+    if (!card) return;
+    this.disabled = true;
+    html2canvas(card, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+      const a = document.createElement("a");
+      a.download = exportName(card) + ".png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    }).catch(() => {}).finally(() => {
+      this.disabled = false;
+    });
   });
 });
 
