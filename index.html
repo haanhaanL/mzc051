@@ -104,7 +104,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
 }
 .export-btn:disabled { color: #bbb; border-color: #ddd; cursor: default; }
-.table-card .title-row .mode-tabs { right: 64px; }
+.table-card .title-row .mode-tabs { right: 12px; }
 .chart-card { position: relative; }
 .chart-title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .chart-title-row .export-btn {
@@ -276,7 +276,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .table-card .title-row { justify-content: flex-start; }
     .table-card .title-row .title { text-align: left; }
     .table-card .title-row .mode-tabs { position: static; transform: none; margin-left: auto; }
-    .table-card .title-row .export-btn { position: static; transform: none; margin-left: 8px; }
 }
 
 #global-watermark {
@@ -305,7 +304,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
             <button class="mode-btn active" data-mode="official">官方</button>
             <button class="mode-btn" data-mode="hourly">每小时</button>
           </div>
-          <button class="export-btn">导出</button>
         </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="data-table">
@@ -340,7 +338,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
             <button class="mode-btn" data-dim="畅销度">畅销度</button>
             <button class="mode-btn" data-dim="推荐度">推荐度</button>
           </div>
-          <button class="export-btn">导出</button>
         </div>
         <div class="table-scroll-box">
           <table class="recent-table" id="dims-table" style="min-width:640px;">
@@ -371,10 +368,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       </div>
 
       <div class="card chart-card">
-        <div class="chart-title-row">
-          <div class="title">三维度</div>
-          <button class="export-btn">导出</button>
-        </div>
+        <div class="title">三维度</div>
         <div class="range-tabs" data-chart="radarRange">
           <button class="range-btn active" data-range="daily">日榜</button>
           <button class="range-btn" data-range="weekly">周榜</button>
