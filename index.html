@@ -1036,11 +1036,11 @@ function renderLineChart() {
           + `<span style="width:${dateW}px;color:#bbb;margin-right:4px;">日期</span>`
           + `<span style="width:${metW}px;text-align:right;white-space:nowrap;">`
           + `<span style="display:inline-block;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${LINE_FIELDS[0].color};margin-right:2px;"></span>`
-          + `<span >${LINE_FIELDS[0].label}</span></span>`
+          + `<span>${LINE_FIELDS[0].label}</span></span>`
           + LINE_FIELDS.slice(1).map(f =>
             `<span style="width:${metW}px;text-align:right;white-space:nowrap;margin-left:${gapW}px;">`
             + `<span style="display:inline-block;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${f.color};margin-right:2px;"></span>`
-            + `<span style="color:#ea3690;">${f.label}</span></span>`
+            + `<span">${f.label}</span></span>`
           ).join("")
           + `</div>`;
 
