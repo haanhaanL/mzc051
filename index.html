@@ -528,7 +528,7 @@ function computeHeadlineDeltas() {
   }
 
   // —— 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
-  const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
   let latestPoint = null; // 最新一条 xx:06 数据
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -580,7 +580,7 @@ function renderHeadlineDeltas() {
   const targetLine = `<div class="delta-line target-line">`
     + `<span class="delta-target-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">今日日榜目标</span>`
     + DIMS.map(d =>
-        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 98 : 96}</span>`
+        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 99.1 : 96}</span>`
       ).join("")
     + `</div>`;
 
@@ -1123,7 +1123,7 @@ function renderRadarChart() {
   const indicators = dims.map(d => ({ name: d.name, max: 100 }));
 
   // 三维度目标值（仅日榜使用）
-  const TARGET = { "播放热度": 90, "畅销度": 98, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
   const targetValues = dims.map(d => TARGET[d.key] ?? 0);
 
   const value = dims.map(d => {
@@ -1135,7 +1135,7 @@ function renderRadarChart() {
   document.getElementById("radarLegend").innerHTML =
     `<div class="item" style="display:block;color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
     + (isDaily
-      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销98 播放90</div>`
+      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销99.1 播放90</div>`
       : "");
 
   const radarTotalEl = document.getElementById("radarTotal");
