@@ -316,24 +316,19 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
       <div class="card table-card">
         <div class="title-row">
-          <div class="title">微博话题 · 最近 24 条</div>
+          <div class="title">由你榜三维度</div>
+          <div class="mode-tabs" id="dimsTabs">
+            <button class="mode-btn active" data-dim="播放热度">播放热度</button>
+            <button class="mode-btn" data-dim="畅销度">畅销度</button>
+            <button class="mode-btn" data-dim="推荐度">推荐度</button>
+          </div>
         </div>
         <div class="table-scroll-box">
-          <table class="recent-table" id="weibo-table">
-            <colgroup>
-              <col class="col-time">
-              <col class="col-metric">
-              <col class="col-metric">
-              <col class="col-metric">
-              <col class="col-metric">
-            </colgroup>
+          <table class="recent-table" id="dims-table" style="min-width:640px;">
             <thead>
               <tr>
                 <th class="col-time-sticky">时间</th>
-                <th>阅读量</th>
-                <th>讨论量</th>
-                <th>互动量</th>
-                <th>原创量</th>
+                <th>-</th><th>-</th><th>-</th><th>-</th><th>-</th><th>-</th><th>-</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -346,8 +341,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title" id="lineTitle">分数趋势</div>
         <div class="range-tabs" data-chart="lineRange">
-          <button class="range-btn active" data-range="weekly">周榜</button>
-          <button class="range-btn" data-range="daily">日榜</button>
+          <button class="range-btn active" data-range="daily">日榜</button>
+          <button class="range-btn" data-range="weekly">周榜</button>
         </div>
         <div class="chart-legend-text" id="lineLegend"></div>
         <div class="chart-wrapper-flex" id="chartLine"></div>
@@ -356,8 +351,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title">三维度</div>
         <div class="range-tabs" data-chart="radarRange">
-          <button class="range-btn active" data-range="weekly">周榜</button>
-          <button class="range-btn" data-range="daily">日榜</button>
+          <button class="range-btn active" data-range="daily">日榜</button>
+          <button class="range-btn" data-range="weekly">周榜</button>
         </div>
         <div class="chart-legend-text" id="radarLegend"></div>
         <div class="radar-total" id="radarTotal"></div>
@@ -391,7 +386,7 @@ const TABLE_FIELDS = [
 ];
 
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
-let lineTab = "weekly", radarTab = "weekly";
+let lineTab = "daily", radarTab = "daily";
 let chartLine = null, chartRadar = null;
 let tableMode = "official";
 
@@ -724,28 +719,6 @@ function renderCellsFromCombined(r) {
   }).join("");
 }
 
-function renderWeiboTable() {
-  const tbody = document.querySelector("#weibo-table tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-  const rows = weiboRows
-    .map(r => ({ ...r, _dt: parseTime(r["时间"]) }))
-    .filter(r => r._dt)
-    .sort((a, b) => b._dt - a._dt)
-    .slice(0, 24);
-  if (!rows.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据</td></tr>';
-    return;
-  }
-  rows.forEach((r, idx) => {
-    const tr = document.createElement("tr");
-    tr.className = "row-weekly" + (idx % 2 === 1 ? " row-group-alt" : "");
-    const cells = WEIBO_FIELDS.map(f => `<td>${r[f] || "-"}</td>`).join("");
-    tr.innerHTML = `<td class="time-cell">${fmtTime(r._dt)}</td>${cells}`;
-    tbody.appendChild(tr);
-  });
-}
-
 function dailySeries() {
   const groups = new Map();
   for (const r of dailyRows) {
@@ -905,14 +878,10 @@ function renderLineChart() {
     const todayItems = LINE_FIELDS.map(f =>
       `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
     ).join("");
-    // 往日：每天一个总分颜色（随天数降低饱和度和透明度）圆点 + 日期
-    const prevItems = series.prevDays.map((d, idx) => {
-      const age = series.prevDays.length - idx;
-      const faded = mixColor(LINE_FIELDS[0].color, Math.min(1, 0.4 + 0.12 * (age - 1)));
-      const alpha = 0.75;
-      return `<span class="item"><span class="dot" style="background:${faded};opacity:${alpha}"></span>${shortDate(d.key)}</span>`;
-    }).join("");
-    legendEl.innerHTML = todayItems + "　" + prevItems;
+    // 昨日：虚线更密更细，按指定颜色
+    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#00c853"];
+    const yestItem = `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>昨日 ${shortDate(series.yestKey)}</span>`;
+    legendEl.innerHTML = todayItems + "　" + yestItem;
   } else {
     legendEl.innerHTML =
       LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
@@ -940,25 +909,20 @@ function renderLineChart() {
         emphasis: { focus: "series" }
       });
     });
-    series.prevDays.forEach((day, idx) => {
-      const age = series.prevDays.length - idx;
-      const fade = Math.min(1, 0.4 + 0.12 * (age - 1));
-      const alpha = 0.75;
-      const dayLabel = shortDate(day.key);
-      LINE_FIELDS.forEach(f => {
-        const faded = mixColor(f.color, fade);
-        seriesOpt.push({
-          name: `${f.label}（${dayLabel}）`,
-          type: "line",
-          data: day.data[f.key],
-          smooth: false,
-          symbol: "circle",
-          symbolSize: 2,
-          connectNulls: false,
-          itemStyle: { color: faded, opacity: alpha },
-          lineStyle: { width: 1.5, color: faded, opacity: alpha, type: "dashed" },
-          emphasis: { focus: "series", itemStyle: { color: f.color, opacity: 1 }, lineStyle: { color: f.color, opacity: 1 } }
-        });
+    // 昨日：只画最近一天，虚线密且细，颜色按指标指定
+    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#00c853"];
+    LINE_FIELDS.forEach((f, fi) => {
+      seriesOpt.push({
+        name: f.label + "（昨日）",
+        type: "line",
+        data: series.prevData[f.key],
+        smooth: false,
+        symbol: "circle",
+        symbolSize: 2,
+        connectNulls: false,
+        itemStyle: { color: yestColors[fi] },
+        lineStyle: { width: 1, color: yestColors[fi], type: [3, 2] },
+        emphasis: { focus: "series" }
       });
     });
   } else {
@@ -985,7 +949,6 @@ function renderLineChart() {
   });
   Object.values(series.data).forEach(scan);
   if (series.prevData) Object.values(series.prevData).forEach(scan);
-  if (series.prevDays) series.prevDays.forEach(d => Object.values(d.data).forEach(scan));
 
   let yMin, yMax;
   if (!isFinite(min) || !isFinite(max)) {
@@ -1311,12 +1274,87 @@ document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').for
   });
 });
 
+let dimsTab = "播放热度";
+function renderDimsTable() {
+  const theadRow = document.querySelector("#dims-table thead tr");
+  const tbody = document.querySelector("#dims-table tbody");
+  if (!theadRow || !tbody) return;
+  const p = n => String(n).padStart(2, "0");
+
+  const now = new Date();
+  const monday = new Date(now);
+  const day = monday.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  monday.setDate(monday.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    days.push(dateKey(d));
+  }
+
+  theadRow.innerHTML = `<th class="col-time-sticky">时间</th>`
+    + days.map(dk => `<th>${shortDate(dk)}</th>`).join("");
+
+  const byDateSlot = new Map();
+  for (const r of dailyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    if (dt.getMinutes() !== 6 && !(dt.getHours() === 0 && dt.getMinutes() === 16)) continue;
+    const slot = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
+    const dk = dateKey(dt);
+    if (!byDateSlot.has(dk)) byDateSlot.set(dk, new Map());
+    byDateSlot.get(dk).set(slot, r);
+  }
+
+  const slots = [];
+  for (let h = 6; h <= 23; h++) slots.push(`${p(h)}:06`);
+  slots.push("00:16");
+
+  tbody.innerHTML = "";
+  slots.forEach(slot => {
+    const vals = days.map((dk, idx) => {
+      let r = null;
+      if (slot === "00:16") {
+        const next = new Date(monday);
+        next.setDate(next.getDate() + idx + 1);
+        const m = byDateSlot.get(dateKey(next));
+        r = m ? m.get("00:16") : null;
+      } else {
+        const m = byDateSlot.get(dk);
+        r = m ? m.get(slot) : null;
+      }
+      const v = r ? parseFloat(r[dimsTab]) : NaN;
+      return isNaN(v) ? null : { text: r[dimsTab] || "-", num: v };
+    });
+    let max = -Infinity;
+    vals.forEach(v => { if (v && v.num > max) max = v.num; });
+    const cells = vals.map(v => {
+      const hl = v && v.num === max;
+      return `<td${hl ? ' style="color:#ea3690;font-weight:bold;"' : ""}>${v ? v.text : "-"}</td>`;
+    }).join("");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="time-cell">${slot}</td>${cells}`;
+    tbody.appendChild(tr);
+  });
+}
+
 document.querySelectorAll('#modeTabs .mode-btn').forEach(btn => {
   btn.addEventListener("click", function () {
     this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
     this.classList.add("active");
     tableMode = this.dataset.mode;
     renderTable();
+  });
+});
+
+document.querySelectorAll('#dimsTabs .mode-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    dimsTab = this.dataset.dim;
+    renderDimsTable();
   });
 });
 
@@ -1341,7 +1379,7 @@ async function load() {
 
   renderHeadlineDeltas();
   renderTable();
-  renderWeiboTable();
+  renderDimsTable();
   renderLineChart();
   renderRadarChart();
 }
