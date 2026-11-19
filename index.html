@@ -377,6 +377,17 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
         <div class="radar-total" id="radarTotal"></div>
         <div class="chart-wrapper-flex" id="chartRadar"></div>
       </div>
+
+      <div class="card chart-card">
+        <div class="title">增幅趋势 · 日榜</div>
+        <div class="range-tabs" data-chart="deltaRange" id="deltaDimTabs">
+          <button class="range-btn active" data-dim="播放热度">播放热度</button>
+          <button class="range-btn" data-dim="畅销度">畅销度</button>
+          <button class="range-btn" data-dim="推荐度">推荐度</button>
+        </div>
+        <div class="chart-legend-text" id="deltaLegend"></div>
+        <div class="chart-wrapper-flex" id="chartDelta"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -403,10 +414,14 @@ const TABLE_FIELDS = [
   { key: "畅销度", changeKey: "畅销度涨幅" },
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
+const DELTA_DIMS = ["播放热度", "畅销度", "推荐度"];
+const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推荐度": "#00c853" };
+const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8" };
 
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
 let lineTab = "daily", radarTab = "daily";
-let chartLine = null, chartRadar = null;
+let chartLine = null, chartRadar = null, chartDelta = null;
+let deltaDim = "播放热度";
 let tableMode = "official";
 
 function parseCSV(text) {
@@ -1284,6 +1299,151 @@ function renderRadarChart() {
   chartRadar.resize();
 }
 
+function dayDeltaArr(arr) {
+  let base = null;
+  return (arr || []).map(v => {
+    if (v === null || v === undefined || isNaN(v)) return null;
+    if (base === null) base = v;
+    return +(v - base).toFixed(2);
+  });
+}
+
+function renderDeltaChart() {
+  const series = dailySeries();
+  const legendEl = document.getElementById("deltaLegend");
+  const color = DELTA_COLORS[deltaDim];
+  const yestColor = DELTA_YEST_COLORS[deltaDim];
+
+  const todayDelta = dayDeltaArr(series.data[deltaDim]);
+  const prevDeltas = series.prevDays.map(d => ({ key: d.key, data: dayDeltaArr(d.data[deltaDim]) }));
+  const yest = prevDeltas.length ? prevDeltas[prevDeltas.length - 1] : null;
+  const older = prevDeltas.slice(0, -1);
+
+  if (legendEl) {
+    const yestDate = series.yestKey ? shortDate(series.yestKey) : "-";
+    legendEl.innerHTML =
+      `<span class="item"><span class="dot" style="background:${color}"></span>今日</span>`
+      + `<span class="item"><span class="dot" style="background:${yestColor}"></span>${yestDate}</span>`
+      + `<span class="item"><span class="dot" style="background:#ccc"></span>其余近5天</span>`;
+  }
+
+  if (!chartDelta) chartDelta = echarts.init(document.getElementById("chartDelta"));
+
+  const seriesOpt = [];
+  older.forEach(p => {
+    seriesOpt.push({
+      name: shortDate(p.key),
+      type: "line",
+      data: p.data,
+      smooth: false,
+      symbol: "none",
+      connectNulls: false,
+      itemStyle: { color: "#ccc" },
+      lineStyle: { width: 1, color: "#ccc", type: [3, 2] },
+      emphasis: { focus: "series" }
+    });
+  });
+  if (yest) {
+    seriesOpt.push({
+      name: shortDate(yest.key) + "（昨日）",
+      type: "line",
+      data: yest.data,
+      smooth: false,
+      symbol: "circle",
+      symbolSize: 2,
+      connectNulls: false,
+      itemStyle: { color: yestColor },
+      lineStyle: { width: 1, color: yestColor, type: [3, 2] },
+      emphasis: { focus: "series" }
+    });
+  }
+  seriesOpt.push({
+    name: "今日",
+    type: "line",
+    data: todayDelta,
+    smooth: false,
+    symbol: "circle",
+    symbolSize: 3,
+    connectNulls: false,
+    itemStyle: { color: color },
+    lineStyle: { width: 2, color: color },
+    emphasis: { focus: "series" }
+  });
+
+  let min = Infinity, max = -Infinity;
+  const scan = arr => arr.forEach(v => {
+    if (v !== null && v !== undefined && !isNaN(v)) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+  });
+  scan(todayDelta);
+  prevDeltas.forEach(p => scan(p.data));
+
+  let yMin, yMax;
+  if (!isFinite(min) || !isFinite(max)) {
+    yMin = 0; yMax = 5;
+  } else {
+    const pad = Math.max((max - min) * 0.1, 0.5);
+    yMin = Math.floor((min - pad) / 5) * 5;
+    yMax = Math.ceil((max + pad) / 5) * 5;
+    if (yMax <= yMin) yMax = yMin + 5;
+  }
+
+  chartDelta.setOption({
+    tooltip: {
+      trigger: "axis",
+      confine: true,
+      formatter: function (params) {
+        if (!params.length) return "";
+        const i = params[0].dataIndex;
+        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${series.labels[i]}</div>`;
+        params.slice().reverse().forEach(p => {
+          const v = p.value;
+          if (v === null || v === undefined || isNaN(v)) return;
+          const txt = (v > 0 ? "+" : "") + (+v).toFixed(2);
+          const c = v > 0 ? "#ea3690" : (v < 0 ? "#27ae60" : "#999");
+          html += `<div style="display:flex;align-items:center;gap:10px;min-width:150px;line-height:20px;font-size:12px;">`
+            + `<span>${p.marker}</span>`
+            + `<span>${p.seriesName}</span>`
+            + `<span style="margin-left:auto;font-weight:bold;color:${c};">${txt}</span>`
+            + `</div>`;
+        });
+        return html;
+      }
+    },
+    grid: { left: "2%", right: "5%", bottom: "14%", top: "8%", containLabel: true },
+    xAxis: {
+      type: "category",
+      boundaryGap: false,
+      data: series.axisLabels,
+      axisLabel: {
+        interval: 3,
+        fontSize: 10,
+        color: "#888",
+        rotate: 45,
+        formatter: function (value) { return value || ""; }
+      },
+      axisLine: { lineStyle: { color: "#f0d6e4" } }
+    },
+    yAxis: {
+      type: "value",
+      min: yMin,
+      max: yMax,
+      minInterval: 1,
+      axisLabel: {
+        fontSize: 10,
+        color: "#888",
+        formatter: function (v) { return (v > 0 ? "+" : "") + v; }
+      },
+      axisLine: { lineStyle: { color: "#f0d6e4" } },
+      splitLine: { lineStyle: { color: "#faf0f6" } }
+    },
+    series: seriesOpt
+  }, true);
+  chartDelta.resize();
+}
+
 document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forEach(btn => {
   btn.addEventListener("click", function () {
     this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
@@ -1392,6 +1552,15 @@ document.querySelectorAll('#dimsTabs .mode-btn').forEach(btn => {
   });
 });
 
+document.querySelectorAll('#deltaDimTabs .range-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    deltaDim = this.dataset.dim;
+    renderDeltaChart();
+  });
+});
+
 function exportName(card) {
   let base = "";
   const t = card.querySelector(".title");
@@ -1447,6 +1616,7 @@ async function load() {
   renderDimsTable();
   renderLineChart();
   renderRadarChart();
+  renderDeltaChart();
 }
 load();
 
@@ -1456,6 +1626,7 @@ window.addEventListener("resize", function () {
   resizeTimer = setTimeout(function () {
     if (chartLine) chartLine.resize();
     if (chartRadar) chartRadar.resize();
+    if (chartDelta) chartDelta.resize();
   }, 200);
 });
 </script>
