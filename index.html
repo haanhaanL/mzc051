@@ -546,7 +546,7 @@ function computeHeadlineDeltas() {
   }
 
   // —— 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
-  const TARGET = { "播放热度": 90, "畅销度": 99.14, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
   let latestPoint = null; // 最新一条 xx:06 数据
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -554,11 +554,19 @@ function computeHeadlineDeltas() {
     if (dt.getMinutes() !== 6) continue;      // 只读整点6分
     if (!latestPoint || dt > latestPoint.dt) latestPoint = { dt, r };
   }
+  // 00:16~06:00 之间（新旧一天交替）显示占位符 -
+  let inResetWindow = false;
+  if (latestPoint) {
+    const minsOfDay = latestPoint.dt.getHours() * 60 + latestPoint.dt.getMinutes();
+    inResetWindow = minsOfDay >= 16 && minsOfDay < 6 * 60;
+  }
   const remainHours = latestPoint ? Math.max(1, 24 - latestPoint.dt.getHours()) : 1;
   const dailyTargetNeed = {};
   DIMS.forEach(d => {
     const cur = latestPoint ? parseFloat(latestPoint.r[d]) : NaN;
-    if(TARGET[d] <= cur) {
+    if (inResetWindow) {
+      dailyTargetNeed[d] = '-';
+    } else if(TARGET[d] <= cur) {
       dailyTargetNeed[d] = '达成'
     } else {
       dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
@@ -598,7 +606,7 @@ function renderHeadlineDeltas() {
   const targetLine = `<div class="delta-line target-line">`
     + `<span class="delta-target-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">今日日榜目标</span>`
     + DIMS.map(d =>
-        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 99.14 : 96}</span>`
+        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 99.1 : 96}</span>`
       ).join("")
     + `</div>`;
 
@@ -898,7 +906,7 @@ function renderLineChart() {
       `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
     ).join("");
     // 昨日：虚线更密更细，按指定颜色
-    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#00c853"];
+    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
     const yestItem = `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${shortDate(series.yestKey)}</span>`;
     legendEl.innerHTML = todayItems + "　" + yestItem;
   } else {
@@ -1141,7 +1149,7 @@ function renderRadarChart() {
   const indicators = dims.map(d => ({ name: d.name, max: 100 }));
 
   // 三维度目标值（仅日榜使用）
-  const TARGET = { "播放热度": 90, "畅销度": 99.14, "推荐度": 96 };
+  const TARGET = { "播放热度": 90, "畅销度": 99.1, "推荐度": 96 };
   const targetValues = dims.map(d => TARGET[d.key] ?? 0);
 
   const value = dims.map(d => {
@@ -1153,7 +1161,7 @@ function renderRadarChart() {
   document.getElementById("radarLegend").innerHTML =
     `<div class="item" style="display:block;color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
     + (isDaily
-      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销99.14 播放90</div>`
+      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销99.1 播放90</div>`
       : "");
 
   const radarTotalEl = document.getElementById("radarTotal");
