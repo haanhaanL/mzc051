@@ -1250,12 +1250,13 @@ function renderDeltaChart() {
   chartDelta.resize();
 }
 
-// 增幅图表共用 y 轴：最低 0、最大值自适应、固定等间距刻度
-function deltaYAxis(arrs) {
+// 增幅图表共用 y 轴：最低 0、最大值自适应、固定等间距刻度；maxCap 可选上限（超出部分不展示）
+function deltaYAxis(arrs, maxCap) {
   let maxV = 0;
   arrs.forEach(arr => arr.forEach(v => {
     if (v !== null && v !== undefined && !isNaN(v) && v > maxV) maxV = v;
   }));
+  if (typeof maxCap === "number") maxV = Math.min(maxV, maxCap);
   let interval, yMax;
   if (maxV <= 0) {
     interval = 1; yMax = 5;
@@ -1268,6 +1269,7 @@ function deltaYAxis(arrs) {
     }
     yMax = Math.ceil(raw / interval) * interval;
   }
+  if (typeof maxCap === "number" && yMax > maxCap) yMax = maxCap;
   return { min: 0, max: yMax, interval: interval };
 }
 
@@ -1405,7 +1407,7 @@ function renderDeltaWeekChart() {
     });
   }
 
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr));
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 5);
 
   chartDeltaWeek.setOption({
     tooltip: {
