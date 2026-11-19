@@ -201,29 +201,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit;
 }
 .range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
-.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
-.chart-legend-text .item { display: inline-block; margin: 0 5px; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }.chart-legend-text .item { display: inline-block; margin: 0 5px; }
 .chart-legend-text .dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     margin-right: 4px; vertical-align: middle;
-}
-
-.radar-total {
-    text-align: center;
-    margin: 0 8px 6px 8px;
-    line-height: 1.25;
-}
-.radar-total .radar-total-value {
-    display: block;
-    color: #ea3690;
-    font-size: 20px;
-    font-weight: bold;
-}
-.radar-total .radar-total-label {
-    display: block;
-    color: #bbb;
-    font-size: 12px;
-    margin-top: 2px;
 }
 
 .empty-row td { color: #999; padding: 30px 0; }
@@ -368,17 +349,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       </div>
 
       <div class="card chart-card">
-        <div class="title">三维度</div>
-        <div class="range-tabs" data-chart="radarRange">
-          <button class="range-btn active" data-range="daily">日榜</button>
-          <button class="range-btn" data-range="weekly">周榜</button>
-        </div>
-        <div class="chart-legend-text" id="radarLegend"></div>
-        <div class="radar-total" id="radarTotal"></div>
-        <div class="chart-wrapper-flex" id="chartRadar"></div>
-      </div>
-
-      <div class="card chart-card">
         <div class="title">增幅趋势 · 日榜</div>
         <div class="range-tabs" data-chart="deltaRange" id="deltaDimTabs">
           <button class="range-btn active" data-dim="播放热度">播放热度</button>
@@ -387,6 +357,17 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
         </div>
         <div class="chart-legend-text" id="deltaLegend"></div>
         <div class="chart-wrapper-flex" id="chartDelta"></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="title">增幅趋势 · 周榜</div>
+        <div class="range-tabs" data-chart="deltaWeekRange" id="deltaDimWeekTabs">
+          <button class="range-btn active" data-dim="播放热度">播放热度</button>
+          <button class="range-btn" data-dim="畅销度">畅销度</button>
+          <button class="range-btn" data-dim="推荐度">推荐度</button>
+        </div>
+        <div class="chart-legend-text" id="deltaWeekLegend"></div>
+        <div class="chart-wrapper-flex" id="chartDeltaWeek"></div>
       </div>
     </div>
   </div>
@@ -401,7 +382,6 @@ const WEIBO_CSV = "weibo_trend.csv";
 const HOURLY_CSV = "combined_06.csv";
 const WEIBO_FIELDS = ["阅读量", "讨论量", "互动量", "原创量"];
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
-const RADAR_METRICS = ["播放热度", "畅销度", "推荐度"];
 const LINE_FIELDS = [
   { key: "综合得分", label: "总分", color: "#ea3690" },
   { key: "播放热度", label: "播放热度", color: "#7c3aed" },
@@ -419,9 +399,9 @@ const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推�
 const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8" };
 
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
-let lineTab = "daily", radarTab = "daily";
-let chartLine = null, chartRadar = null, chartDelta = null;
-let deltaDim = "播放热度";
+let lineTab = "daily";
+let chartLine = null, chartDelta = null, chartDeltaWeek = null;
+let deltaDim = "播放热度", deltaDimWeek = "播放热度";
 let tableMode = "official";
 
 function parseCSV(text) {
@@ -1142,170 +1122,16 @@ function renderLineChart() {
   chartLine.resize();
 }
 
-function renderRadarChart() {
-  const series = radarTab === "daily" ? dailySeries() : weeklySeries();
-  if (!chartRadar) chartRadar = echarts.init(document.getElementById("chartRadar"));
-  const last = series.last;
-  if (!last) {
-    chartRadar.setOption({
-      title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: "#999", fontSize: 14 } }
-    }, true);
-    document.getElementById("radarLegend").innerHTML = "";
-    const radarTotalElEmpty = document.getElementById("radarTotal");
-    if (radarTotalElEmpty) radarTotalElEmpty.innerHTML = "";
-    return;
-  }
-
-  const { dailyDimDeltas, weeklyDimDeltas } = computeHeadlineDeltas();
-  const dimDeltas = radarTab === "daily" ? dailyDimDeltas : weeklyDimDeltas;
-  const isDaily = radarTab === "daily";
-
-  const dims = RADAR_METRICS.map(name => ({ name, key: name }));
-  const indicators = dims.map(d => ({ name: d.name, max: 100 }));
-
-  // 三维度目标值（仅日榜使用）
-  const TARGET = { "播放热度": 90, "畅销度": 85, "推荐度": 96 };
-  const targetValues = dims.map(d => TARGET[d.key] ?? 0);
-
-  const value = dims.map(d => {
-    const v = parseFloat(last.r[d.key]);
-    return isNaN(v) ? 0 : v;
+function hourDiffArr(vals) {
+  // 增幅为每小时的增幅：与上一有效取值之差（非累计）
+  const out = [];
+  let prev = null;
+  (vals || []).forEach((v, i) => {
+    if (v === null || v === undefined || isNaN(v)) { out.push(null); return; }
+    out.push(prev === null ? null : +(v - prev).toFixed(2));
+    prev = v;
   });
-
-  // 图例：最新数据 + 目标（换行显示）
-  document.getElementById("radarLegend").innerHTML =
-    `<div class="item" style="display:block;color:#ea3690;font-weight:bold;">最新数据：${fmtTime(last.dt)}</div>`
-    + (isDaily
-      ? `<div class="item" style="display:block;margin-top:2px;"><span class="dot" style="background:#ffb6d9"></span>目标：推荐96 畅销85 播放90</div>`
-      : "");
-
-  const radarTotalEl = document.getElementById("radarTotal");
-  if (radarTotalEl) {
-    const totalVal = last.r["综合得分"];
-    radarTotalEl.innerHTML =
-      `<span class="radar-total-value">${totalVal || "-"}</span>`
-      + `<span class="radar-total-label">总分</span>`;
-  }
-
-  // 目标系列（仅日榜）
-  const targetSeries = isDaily ? [{
-    value: targetValues,
-    name: "目标",
-    lineStyle: { width: 2, type: "solid", color: "#ffb6d9" },
-    itemStyle: { color: "#ffb6d9" },
-    areaStyle: { color: "transparent" }
-  }] : [];
-
-  chartRadar.setOption({
-    tooltip: {
-      trigger: "item",
-      confine: true,
-      formatter: function () {
-        // 1. 时间
-        let html = `<div style="font-weight:bold;margin-bottom:8px;font-size:12px;">${fmtTime(last.dt)}</div>`;
-
-        // 2. 表头（放在时间后面，目标差列仅日榜）
-        html += `<div style="display:flex;align-items:center;gap:10px;min-width:300px;line-height:18px;color:#bbb;font-size:11px;margin-bottom:4px;">`
-          + `<span style="width:60px;">维度</span>`
-          + `<span style="width:44px;text-align:right;">分数</span>`
-          + `<span style="width:56px;text-align:right;">涨幅</span>`
-          + (isDaily ? `<span style="width:64px;text-align:right;">目标差</span>` : "")
-          + `</div>`;
-
-        // 3. 数据行
-        dims.forEach((d, i) => {
-          const val = parseFloat(last.r[d.key]);
-          const valText = isNaN(val) ? "-" : val;
-
-          // 涨幅
-          const raw = dimDeltas[d.key] || "-";
-          let deltaText = "-", deltaColor = "#999";
-          if (raw !== "-") {
-            const n = parseFloat(raw);
-            if (!isNaN(n)) {
-              deltaText = (n > 0 ? "+" : "") + n.toFixed(2);
-              deltaColor = n > 0 ? "#ea3690" : (n < 0 ? "#27ae60" : "#999");
-            }
-          }
-
-          // 与目标差值（仅日榜，统一绿色）
-          let gapHtml = "";
-          if (isDaily) {
-            const tgt = targetValues[i];
-            let gapText = "-";
-            if (!isNaN(val)) {
-              const gap = val - tgt;
-              gapText = (gap > 0 ? "+" : "") + gap.toFixed(2);
-            }
-            gapHtml = `<span style="width:64px;text-align:right;color:#27ae60;font-weight:bold;">${gapText}</span>`;
-          }
-
-          html += `<div style="display:flex;align-items:center;gap:10px;min-width:300px;line-height:22px;font-size:12px;">`
-            + `<span style="width:60px;color:#999;">${d.name}</span>`
-            + `<span style="width:44px;text-align:right;font-weight:bold;color:#333;">${valText}</span>`
-            + `<span style="width:56px;text-align:right;color:${deltaColor};font-weight:bold;">${deltaText}</span>`
-            + gapHtml
-            + `</div>`;
-        });
-
-        return html;
-      }
-    },
-    radar: {
-      shape: "circle",
-      startAngle: -90,
-      indicator: indicators,
-      center: ["50%", "40%"],
-      radius: "72%",
-      axisName: {
-        formatter: function (name) {
-          const idx = indicators.findIndex(x => x.name === name);
-          const v = idx >= 0 ? value[idx] : "";
-          return `{value|${v}}\n{name|${name}}`;
-        },
-        rich: {
-          name: { color: "#bbb", fontSize: 12, fontWeight: "normal", lineHeight: 18 },
-          value: { color: "#ea3690", fontSize: 13, fontWeight: "bold", lineHeight: 18 }
-        }
-      },
-      splitNumber: 3,
-      splitLine: { lineStyle: { color: "rgba(234,54,144,0.12)" } },
-      splitArea: { show: false },
-      axisLine: { lineStyle: { color: "rgba(234,54,144,0.15)" } }
-    },
-    series: [{
-      type: "radar",
-      symbol: "none",
-      data: [
-        ...targetSeries,
-        {
-          value,
-          name: "最新",
-          areaStyle: { color: "transparent" },
-          lineStyle: {
-            width: 5,
-            join: "round",
-            cap: "round",
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "#FF8E63" },
-              { offset: 1, color: "#FF4BD2" }
-            ])
-          },
-          itemStyle: { color: "#FF4BD2" }
-        }
-      ]
-    }]
-  }, true);
-  chartRadar.resize();
-}
-
-function dayDeltaArr(arr) {
-  let base = null;
-  return (arr || []).map(v => {
-    if (v === null || v === undefined || isNaN(v)) return null;
-    if (base === null) base = v;
-    return +(v - base).toFixed(2);
-  });
+  return out;
 }
 
 function renderDeltaChart() {
@@ -1314,8 +1140,8 @@ function renderDeltaChart() {
   const color = DELTA_COLORS[deltaDim];
   const yestColor = DELTA_YEST_COLORS[deltaDim];
 
-  const todayDelta = dayDeltaArr(series.data[deltaDim]);
-  const prevDeltas = series.prevDays.map(d => ({ key: d.key, data: dayDeltaArr(d.data[deltaDim]) }));
+  const todayDelta = hourDiffArr(series.data[deltaDim]);
+  const prevDeltas = series.prevDays.map(d => ({ key: d.key, data: hourDiffArr(d.data[deltaDim]) }));
   const yest = prevDeltas.length ? prevDeltas[prevDeltas.length - 1] : null;
   const older = prevDeltas.slice(0, -1);
 
@@ -1339,7 +1165,7 @@ function renderDeltaChart() {
       symbol: "none",
       connectNulls: false,
       itemStyle: { color: "#ccc" },
-      lineStyle: { width: 1, color: "#ccc", type: [3, 2] },
+      lineStyle: { width: 1, color: "#ccc" },
       emphasis: { focus: "series" }
     });
   });
@@ -1353,7 +1179,7 @@ function renderDeltaChart() {
       symbolSize: 2,
       connectNulls: false,
       itemStyle: { color: yestColor },
-      lineStyle: { width: 1, color: yestColor, type: [3, 2] },
+      lineStyle: { width: 1, color: yestColor },
       emphasis: { focus: "series" }
     });
   }
@@ -1370,25 +1196,7 @@ function renderDeltaChart() {
     emphasis: { focus: "series" }
   });
 
-  let min = Infinity, max = -Infinity;
-  const scan = arr => arr.forEach(v => {
-    if (v !== null && v !== undefined && !isNaN(v)) {
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
-  });
-  scan(todayDelta);
-  prevDeltas.forEach(p => scan(p.data));
-
-  let yMin, yMax;
-  if (!isFinite(min) || !isFinite(max)) {
-    yMin = 0; yMax = 5;
-  } else {
-    const pad = Math.max((max - min) * 0.1, 0.5);
-    yMin = Math.floor((min - pad) / 5) * 5;
-    yMax = Math.ceil((max + pad) / 5) * 5;
-    if (yMax <= yMin) yMax = yMin + 5;
-  }
+  const yAxisCfg = deltaYAxis([todayDelta, ...prevDeltas.map(p => p.data)]);
 
   chartDelta.setOption({
     tooltip: {
@@ -1428,9 +1236,7 @@ function renderDeltaChart() {
     },
     yAxis: {
       type: "value",
-      min: yMin,
-      max: yMax,
-      minInterval: 1,
+      ...yAxisCfg,
       axisLabel: {
         fontSize: 10,
         color: "#888",
@@ -1444,6 +1250,215 @@ function renderDeltaChart() {
   chartDelta.resize();
 }
 
+// 增幅图表共用 y 轴：最低 0、最大值自适应、固定等间距刻度
+function deltaYAxis(arrs) {
+  let maxV = 0;
+  arrs.forEach(arr => arr.forEach(v => {
+    if (v !== null && v !== undefined && !isNaN(v) && v > maxV) maxV = v;
+  }));
+  let interval, yMax;
+  if (maxV <= 0) {
+    interval = 1; yMax = 5;
+  } else {
+    const raw = maxV * 1.05;
+    interval = 0.5;
+    for (const c of [0.5, 1, 2, 5, 10, 20]) {
+      interval = c;
+      if (Math.ceil(raw / c) <= 6) break;
+    }
+    yMax = Math.ceil(raw / interval) * interval;
+  }
+  return { min: 0, max: yMax, interval: interval };
+}
+
+// 周榜增幅：数据取周榜（weekly.csv），每条曲线窗口为当天 00:26 → 次日 00:16，每小时取一个点；
+// 增幅为与上一小时点之差（非累计）
+function deltaWeekSeries() {
+  // 窗口起点(≥00:26)的行归属当天；≤00:16 的行为前一天窗口的收尾
+  const groups = new Map(), closePool = new Map();
+  for (const r of weeklyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    const tod = dt.getHours() * 60 + dt.getMinutes();
+    if (tod <= 16) {
+      const k = dateKey(dt);
+      if (!closePool.has(k)) closePool.set(k, []);
+      closePool.get(k).push({ dt, r });
+    } else {
+      const k = dateKey(dt);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push({ dt, r });
+    }
+  }
+  const allKeys = [...groups.keys()].sort();
+  const keys = allKeys.slice(-7);
+  const p2 = n => String(n).padStart(2, "0");
+
+  function addDay(k) {
+    const [y, mo, d] = k.split("-").map(Number);
+    return dateKey(new Date(y, mo - 1, d + 1));
+  }
+
+  function curveOfDay(k) {
+    const pts = (groups.get(k) || []).map(({ dt, r }) => ({ dt, r, closing: false }));
+    pts.sort((a, b) => a.dt - b.dt);
+    const pool = closePool.get(addDay(k)) || [];
+    let closePt = null;
+    for (const { dt, r } of pool) {
+      if (!closePt || dt > closePt.dt) closePt = { dt, r }; // 取最晚一次（如 00:16）
+    }
+    if (closePt) pts.push({ dt: closePt.dt, r: closePt.r, closing: true });
+    const hourly = [];
+    let lastHour = -1;
+    for (const p of pts) {
+      if (p.closing) { hourly.push(p); continue; }
+      const h = p.dt.getHours();
+      if (h !== lastHour) { hourly.push(p); lastHour = h; }
+    }
+    return hourly;
+  }
+
+  const slotIdx = new Map(), axis = [], labels = [];
+  const raw = keys.map(k => ({ key: k, pts: curveOfDay(k) }));
+  const labOf = p => p.closing
+    ? `次日${p2(p.dt.getHours())}:${p2(p.dt.getMinutes())}`
+    : `${p2(p.dt.getHours())}:${p2(p.dt.getMinutes())}`;
+  raw.forEach(({ pts }) => pts.forEach(p => {
+    const lab = labOf(p);
+    if (!slotIdx.has(lab)) { slotIdx.set(lab, axis.length); axis.push(lab); labels.push(lab); }
+  }));
+
+  const curves = raw.map(({ key, pts }) => {
+    const vals = new Array(axis.length).fill(null);
+    pts.forEach(p => {
+      const v = parseFloat(p.r[deltaDimWeek]);
+      if (!isNaN(v)) vals[slotIdx.get(labOf(p))] = v;
+    });
+    return { key, arr: hourDiffArr(vals) };
+  });
+
+  return { axis, labels, curves, todayKey: keys.length ? keys[keys.length - 1] : null, yestKey: keys.length > 1 ? keys[keys.length - 2] : null };
+}
+
+function renderDeltaWeekChart() {
+  const series = deltaWeekSeries();
+  const legendEl = document.getElementById("deltaWeekLegend");
+  const color = DELTA_COLORS[deltaDimWeek];
+  const yestColor = DELTA_YEST_COLORS[deltaDimWeek];
+
+  const yestIdx = series.curves.findIndex(c => c.key === series.yestKey);
+  const todayIdx = series.curves.findIndex(c => c.key === series.todayKey);
+  const older = series.curves.filter((c, i) => i !== todayIdx && i !== yestIdx);
+  const yest = yestIdx >= 0 ? series.curves[yestIdx] : null;
+  const today = todayIdx >= 0 ? series.curves[todayIdx] : null;
+
+  if (legendEl) {
+    const yestDate = series.yestKey ? shortDate(series.yestKey) : "-";
+    legendEl.innerHTML =
+      `<span class="item"><span class="dot" style="background:${color}"></span>今日</span>`
+      + `<span class="item"><span class="dot" style="background:${yestColor}"></span>${yestDate}</span>`
+      + `<span class="item"><span class="dot" style="background:#ccc"></span>其余近5天</span>`;
+  }
+
+  if (!chartDeltaWeek) chartDeltaWeek = echarts.init(document.getElementById("chartDeltaWeek"));
+
+  const seriesOpt = [];
+  older.forEach(c => {
+    seriesOpt.push({
+      name: shortDate(c.key),
+      type: "line",
+      data: c.arr,
+      smooth: false,
+      symbol: "none",
+      connectNulls: true,
+      itemStyle: { color: "#ccc" },
+      lineStyle: { width: 1, color: "#ccc" },
+      emphasis: { focus: "series" }
+    });
+  });
+  if (yest) {
+    seriesOpt.push({
+      name: shortDate(yest.key) + "（昨日）",
+      type: "line",
+      data: yest.arr,
+      smooth: false,
+      symbol: "circle",
+      symbolSize: 2,
+      connectNulls: true,
+      itemStyle: { color: yestColor },
+      lineStyle: { width: 1, color: yestColor },
+      emphasis: { focus: "series" }
+    });
+  }
+  if (today) {
+    seriesOpt.push({
+      name: "今日",
+      type: "line",
+      data: today.arr,
+      smooth: false,
+      symbol: "circle",
+      symbolSize: 3,
+      connectNulls: true,
+      itemStyle: { color: color },
+      lineStyle: { width: 2, color: color },
+      emphasis: { focus: "series" }
+    });
+  }
+
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr));
+
+  chartDeltaWeek.setOption({
+    tooltip: {
+      trigger: "axis",
+      confine: true,
+      formatter: function (params) {
+        if (!params.length) return "";
+        const i = params[0].dataIndex;
+        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${series.labels[i]}</div>`;
+        params.slice().reverse().forEach(p => {
+          const v = p.value;
+          if (v === null || v === undefined || isNaN(v)) return;
+          const txt = (v > 0 ? "+" : "") + (+v).toFixed(2);
+          const c = v > 0 ? "#ea3690" : (v < 0 ? "#27ae60" : "#999");
+          html += `<div style="display:flex;align-items:center;gap:10px;min-width:150px;line-height:20px;font-size:12px;">`
+            + `<span>${p.marker}</span>`
+            + `<span>${p.seriesName}</span>`
+            + `<span style="margin-left:auto;font-weight:bold;color:${c};">${txt}</span>`
+            + `</div>`;
+        });
+        return html;
+      }
+    },
+    grid: { left: "2%", right: "5%", bottom: "14%", top: "8%", containLabel: true },
+    xAxis: {
+      type: "category",
+      boundaryGap: false,
+      data: series.axis,
+      axisLabel: {
+        interval: 2,
+        fontSize: 10,
+        color: "#888",
+        rotate: 45,
+        formatter: function (value) { return value === "次日00:16" ? "次日" : (value || ""); }
+      },
+      axisLine: { lineStyle: { color: "#f0d6e4" } }
+    },
+    yAxis: {
+      type: "value",
+      ...yAxisCfg,
+      axisLabel: {
+        fontSize: 10,
+        color: "#888",
+        formatter: function (v) { return (v > 0 ? "+" : "") + v; }
+      },
+      axisLine: { lineStyle: { color: "#f0d6e4" } },
+      splitLine: { lineStyle: { color: "#faf0f6" } }
+    },
+    series: seriesOpt
+  }, true);
+  chartDeltaWeek.resize();
+}
+
 document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forEach(btn => {
   btn.addEventListener("click", function () {
     this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
@@ -1452,15 +1467,6 @@ document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forE
     renderLineChart();
   });
 });
-document.querySelectorAll('.range-tabs[data-chart="radarRange"] .range-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    radarTab = this.dataset.range;
-    renderRadarChart();
-  });
-});
-
 let dimsTab = "综合得分";
 function renderDimsTable() {
   const theadRow = document.querySelector("#dims-table thead tr");
@@ -1554,10 +1560,19 @@ document.querySelectorAll('#dimsTabs .mode-btn').forEach(btn => {
 
 document.querySelectorAll('#deltaDimTabs .range-btn').forEach(btn => {
   btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
     this.classList.add("active");
     deltaDim = this.dataset.dim;
     renderDeltaChart();
+  });
+});
+
+document.querySelectorAll('#deltaDimWeekTabs .range-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    deltaDimWeek = this.dataset.dim;
+    renderDeltaWeekChart();
   });
 });
 
@@ -1615,8 +1630,8 @@ async function load() {
   renderTable();
   renderDimsTable();
   renderLineChart();
-  renderRadarChart();
   renderDeltaChart();
+  renderDeltaWeekChart();
 }
 load();
 
@@ -1625,8 +1640,8 @@ window.addEventListener("resize", function () {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(function () {
     if (chartLine) chartLine.resize();
-    if (chartRadar) chartRadar.resize();
     if (chartDelta) chartDelta.resize();
+    if (chartDeltaWeek) chartDeltaWeek.resize();
   }, 200);
 });
 </script>
