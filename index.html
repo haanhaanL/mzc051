@@ -1365,7 +1365,7 @@ function renderDimsTable() {
     const cells = vals.map(v => {
       if (!v) return `<td>-</td>`;
       const hl = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
-        : (v.num === min ? ' style="color:#27ae60;font-weight:bold;"' : "");
+        : (v.num === min ? ' style="color:#ffb700;font-weight:bold;"' : "");
       return `<td${hl}>${v.text}</td>`;
     }).join("");
     const tr = document.createElement("tr");
