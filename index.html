@@ -1549,7 +1549,7 @@ function renderDeltaWeekChart() {
     });
   }
 
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 0.5);
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 1);
 
   chartDeltaWeek.setOption({
     tooltip: {
