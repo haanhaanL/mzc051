@@ -671,7 +671,7 @@ function perDayDeltas() {
     for (const m of METS) {
       const a = num(end.r[m]), b = num(start.r[m]);
       g.daily[m] = (a !== null && b !== null) ? a - b : null;
-      g.dailyEnd[m] = a;
+      g.dailyEnd[m] = (end.r[m] !== undefined && (end.r[m] + "").trim() !== "") ? (end.r[m] + "").trim() : null;
     }
   }
 
@@ -703,7 +703,9 @@ function perDayDeltas() {
       const a = m === "综合得分" ? (weekScoreVal(end.r) ?? num(end.r[m])) : num(end.r[m]);
       const b = m === "综合得分" ? (weekScoreVal(start.r) ?? num(start.r[m])) : num(start.r[m]);
       g.weekly[m] = (a !== null && b !== null) ? a - b : null;
-      g.weeklyEnd[m] = a;
+      g.weeklyEnd[m] = a === null ? null
+        : (m === "综合得分" ? ((end.r["综合得分原值"] !== undefined && (end.r["综合得分原值"] + "").trim() !== "") ? (end.r["综合得分原值"] + "").trim() : a)
+          : ((end.r[m] + "").trim()));
     }
   }
 
@@ -714,6 +716,9 @@ function perDayDeltas() {
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
+  // 每日模式行数较少，取消表格 height:100% 拉伸，保持行高与其他 tab 一致
+  const tblEl = document.getElementById("data-table");
+  if (tblEl) tblEl.style.height = (tableMode === "perday") ? "auto" : "";
   const titleEl = document.getElementById("dataTableTitle");
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
@@ -729,13 +734,13 @@ function renderTable() {
     }
     const deltaCell = (d, e) => {
       const hasD = d !== null && d !== undefined && !isNaN(d);
-      const hasE = e !== null && e !== undefined && !isNaN(e);
-      if (!hasD && !hasE) return `<td>-</td>`;
-      const v = hasD ? +(+d).toFixed(2) : null;
-      const cls = (!hasD || v === 0) ? "flat" : (v > 0 ? "up" : "down");
-      const t = hasD ? ((v > 0 ? "+" : "") + v.toFixed(2)) : "-";
-      const vs = hasE ? e : "-";
-      return `<td><span class="cell-main">${vs}</span> / <span class="cell-change ${cls}">${t}</span></td>`;
+      const hasE = e !== null && e !== undefined && e !== "" && !isNaN(e);
+      if (!hasD || !hasE) return `<td>-</td>`;
+      // 差值保留最大位数（去除浮点噪声）
+      const v = Math.round(d * 1e10) / 1e10;
+      const cls = v === 0 ? "flat" : (v > 0 ? "up" : "down");
+      const t = (v > 0 ? "+" : "") + v;
+      return `<td><span class="cell-main">${e}</span> / <span class="cell-change ${cls}">${t}</span></td>`;
     };
     const rowCells = (dd, de) => {
       if (!dd && !de) return `<td colspan="4">-</td>`;
