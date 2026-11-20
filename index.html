@@ -49,28 +49,16 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .headline-deltas .up { color: #ea3690; }
 .headline-deltas .down { color: #27ae60; }
 .headline-deltas .flat { color: #999; }
-
 .headline-deltas .delta-sep {
-    grid-column: 1 / -1;
-    height: 1px;
-    background: rgba(234,54,144,0.18);
-    margin: 5px 0;
+    grid-column: 1 / -1; height: 1px;
+    background: rgba(234,54,144,0.18); margin: 5px 0;
 }
 .headline-deltas .delta-target-label,
 .headline-deltas .delta-need-label {
-    font-size: 11px;
-    color: #999;
-    font-weight: normal;
-    white-space: nowrap;
+    font-size: 11px; color: #999; font-weight: normal; white-space: nowrap;
 }
-.headline-deltas .target-line .target-val {
-    color: #ea3690;
-    font-weight: bold;
-}
-.headline-deltas .need-line .need-val {
-    color: #fa8c16;
-    font-weight: bold;
-}
+.headline-deltas .target-line .target-val { color: #ea3690; font-weight: bold; }
+.headline-deltas .need-line .need-val { color: #fa8c16; font-weight: bold; }
 
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
@@ -78,14 +66,11 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .title { text-align: center; color: #ea3690; font-size: 15px; font-weight: bold; margin: 5px 0 8px 0; }
 
-/* 表格卡片标题行：标题 + 右侧切换 */
 .table-card .title-row {
     display: flex; align-items: center; justify-content: center;
     position: relative; margin: 5px 0 8px 0; padding: 0 12px;
 }
-.table-card .title-row .title {
-    margin: 0; text-align: center; flex: 1 1 auto;
-}
+.table-card .title-row .title { margin: 0; text-align: center; flex: 1 1 auto; }
 .table-card .title-row .mode-tabs {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     display: flex; gap: 6px;
@@ -104,12 +89,9 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
 }
 .export-btn:disabled { color: #bbb; border-color: #ddd; cursor: default; }
-.table-card .title-row .mode-tabs { right: 12px; }
 .chart-card { position: relative; }
 .chart-title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.chart-title-row .export-btn {
-    position: static; transform: none; top: auto;
-}
+.chart-title-row .export-btn { position: static; transform: none; top: auto; }
 
 .table-scroll-box {
     width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -148,21 +130,15 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table td.time-cell { vertical-align: middle; }
 
 #data-table tbody td {
-    height: 32px;
-    line-height: 20px;
-    padding-top: 0;
-    padding-bottom: 0;
-    vertical-align: middle;
+    height: 32px; line-height: 20px;
+    padding-top: 0; padding-bottom: 0; vertical-align: middle;
 }
 
 #weibo-table tbody tr { height: 32px; }
 #weibo-table tbody td {
-    height: 32px !important;
-    line-height: 32px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    vertical-align: middle;
-    box-sizing: border-box;
+    height: 32px !important; line-height: 32px !important;
+    padding-top: 0 !important; padding-bottom: 0 !important;
+    vertical-align: middle; box-sizing: border-box;
 }
 
 .recent-table tbody tr.row-daily td,
@@ -202,7 +178,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit;
 }
 .range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
-.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }.chart-legend-text .item { display: inline-block; margin: 0 5px; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
+.chart-legend-text .item { display: inline-block; margin: 0 5px; }
 .chart-legend-text .dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     margin-right: 4px; vertical-align: middle;
@@ -247,16 +224,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     #data-table { min-width: 460px; font-size: 10px; }
     #data-table th, #data-table tbody td { padding: 4px 1px; }
     #data-table col.col-score { width: 26%; }
-    #data-table tbody td {
-        height: 28px;
-        line-height: 18px;
-    }
+    #data-table tbody td { height: 28px; line-height: 18px; }
 
     #weibo-table tbody tr { height: 28px; }
-    #weibo-table tbody td {
-        height: 28px !important;
-        line-height: 28px !important;
-    }
+    #weibo-table tbody td { height: 28px !important; line-height: 28px !important; }
 
     .table-card .title-row { justify-content: flex-start; }
     .table-card .title-row .title { text-align: left; }
@@ -401,7 +372,6 @@ const TABLE_FIELDS = [
   { key: "畅销度", changeKey: "畅销度涨幅" },
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
-const DELTA_DIMS = ["播放热度", "畅销度", "推荐度"];
 const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推荐度": "#00c853", "综合得分": "#ea3690" };
 const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8", "综合得分": "#ff9dce" };
 
@@ -428,7 +398,6 @@ function parseTime(s) {
   if (!m) return null;
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
 }
-// 周榜总分统一读「综合得分原值」列，缺失时回退「综合得分」
 function weekScoreVal(r) {
   if (!r) return null;
   const raw = parseFloat(r["综合得分原值"]);
@@ -473,7 +442,6 @@ function computeHeadlineDeltas() {
   const DIMS = ["播放热度", "畅销度", "推荐度"];
   const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 
-  // —— 日榜涨幅：当前业务日最后一条 − 当日 06:06（00:16 归前一天）——
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -500,7 +468,6 @@ function computeHeadlineDeltas() {
     }
   }
 
-  // —— 周榜涨幅：周一 00:26 − 周二 00:06；周二~周六 次日00:06 − 当天00:06；周日 周一00:16 − 周日00:06 ——
   function findAt(dayStr, hh, mm) {
     for (const r of weeklyRows) {
       const dt = parseTime(r["时间"]);
@@ -558,16 +525,14 @@ function computeHeadlineDeltas() {
     }
   }
 
-  // —— 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
   const TARGET = { "播放热度": 90, "畅销度": 85, "推荐度": 96 };
-  let latestPoint = null; // 最新一条 xx:06 数据
+  let latestPoint = null;
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
-    if (dt.getMinutes() !== 6) continue;      // 只读整点6分
+    if (dt.getMinutes() !== 6) continue;
     if (!latestPoint || dt > latestPoint.dt) latestPoint = { dt, r };
   }
-  // 00:16~06:00 之间（新旧一天交替）显示占位符 -
   let inResetWindow = false;
   if (latestPoint) {
     const minsOfDay = latestPoint.dt.getHours() * 60 + latestPoint.dt.getMinutes();
@@ -579,8 +544,8 @@ function computeHeadlineDeltas() {
     const cur = latestPoint ? parseFloat(latestPoint.r[d]) : NaN;
     if (inResetWindow) {
       dailyTargetNeed[d] = '-';
-    } else if(TARGET[d] <= cur) {
-      dailyTargetNeed[d] = '达成'
+    } else if (TARGET[d] <= cur) {
+      dailyTargetNeed[d] = '达成';
     } else {
       dailyTargetNeed[d] = isNaN(cur) ? "-" : ((TARGET[d] - cur) / remainHours).toFixed(2);
     }
@@ -646,14 +611,12 @@ function renderHeadlineDeltas() {
     + `</div>`;
 }
 
-// —— 每日涨幅：日榜每天06:06 → 次日00:16、周榜每天00:26 → 次日00:16，四项指标作差 ——
 function perDayDeltas() {
   const METS = METRICS;
   const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
   const out = new Map();
   const ensure = k => { if (!out.has(k)) out.set(k, { daily: null, weekly: null }); return out.get(k); };
 
-  // 日榜：按 businessDay 分组（06:06 ~ 次日00:16）
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -666,1159 +629,4 @@ function perDayDeltas() {
     list.sort((a, b) => a.dt - b.dt);
     const f = list.filter(x => {
       const h = x.dt.getHours(), m = x.dt.getMinutes();
-      return (h === 0 && m === 16) || h * 60 + m >= 6 * 60 + 6;
-    });
-    if (!f.length) continue;
-    const start = f.find(x => x.dt.getHours() === 6 && x.dt.getMinutes() === 6) || f[0];
-    const end = f[f.length - 1];
-    const g = ensure(k);
-    g.daily = {};
-    g.dailyEnd = {};
-    for (const m of METS) {
-      const a = num(end.r[m]), b = num(start.r[m]);
-      g.daily[m] = (a !== null && b !== null) ? a - b : null;
-      g.dailyEnd[m] = (end.r[m] !== undefined && (end.r[m] + "").trim() !== "") ? (end.r[m] + "").trim() : null;
-    }
-  }
-
-  // 周榜：周一窗口为 00:26 → 次日00:16，其余为当天00:16 → 次日00:16（无收尾数据时取当天最新一条）
-  const wByCal = new Map();
-  for (const r of weeklyRows) {
-    const dt = parseTime(r["时间"]);
-    if (!dt) continue;
-    const k = dateKey(dt);
-    if (!wByCal.has(k)) wByCal.set(k, []);
-    wByCal.get(k).push({ dt, r });
-  }
-  for (const [k, list] of wByCal) {
-    list.sort((a, b) => a.dt - b.dt);
-    const mins = x => x.dt.getHours() * 60 + x.dt.getMinutes();
-    const [y, mo, d] = k.split("-").map(Number);
-    const isMonday = new Date(y, mo - 1, d).getDay() === 1;
-    const start = isMonday
-      ? (list.filter(x => mins(x) >= 26)[0] || list[0])
-      : (list.filter(x => mins(x) <= 16).slice(-1)[0]
-        || list.filter(x => mins(x) >= 26)[0] || list[0]);
-    const nextList = wByCal.get(dateKey(new Date(y, mo - 1, d + 1))) || [];
-    const closePool = nextList.filter(x => mins(x) <= 16);
-    const end = closePool.length ? closePool[closePool.length - 1] : list[list.length - 1];
-    const g = ensure(k);
-    g.weekly = {};
-    g.weeklyEnd = {};
-    for (const m of METS) {
-      const a = m === "综合得分" ? (weekScoreVal(end.r) ?? num(end.r[m])) : num(end.r[m]);
-      const b = m === "综合得分" ? (weekScoreVal(start.r) ?? num(start.r[m])) : num(start.r[m]);
-      g.weekly[m] = (a !== null && b !== null) ? a - b : null;
-      g.weeklyEnd[m] = a === null ? null
-        : (m === "综合得分" ? ((end.r["综合得分原值"] !== undefined && (end.r["综合得分原值"] + "").trim() !== "") ? (end.r["综合得分原值"] + "").trim() : a)
-          : ((end.r[m] + "").trim()));
-    }
-  }
-
-  const keys = [...out.keys()].sort().reverse().slice(0, 7);
-  return { keys, map: out };
-}
-
-function renderTable() {
-  const tbody = document.querySelector("#data-table tbody");
-  tbody.innerHTML = "";
-  // 每日模式行数较少，取消表格 height:100% 拉伸，保持行高与其他 tab 一致
-  const tblEl = document.getElementById("data-table");
-  if (tblEl) tblEl.style.height = (tableMode === "perday") ? "auto" : "";
-  const titleEl = document.getElementById("dataTableTitle");
-  if (titleEl) {
-    titleEl.textContent = tableMode === "hourly"
-      ? "由你榜-每小时 · 最近 12 条"
-      : (tableMode === "perday" ? "由你榜-周榜 · 最近 7 天" : "由你榜-官方CD · 最近 12 条");
-  }
-
-  if (tableMode === "perday") {
-    const { keys, map } = perDayDeltas();
-    if (!keys.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
-      return;
-    }
-    const deltaCell = (d, e) => {
-      const hasD = d !== null && d !== undefined && !isNaN(d);
-      const hasE = e !== null && e !== undefined && e !== "" && !isNaN(e);
-      if (!hasD || !hasE) return `<td>-</td>`;
-      // 差值保留最大位数（去除浮点噪声）
-      const v = Math.round(d * 1e10) / 1e10;
-      const cls = v === 0 ? "flat" : (v > 0 ? "up" : "down");
-      const t = v < 0 ? "-" : (v > 0 ? "+" : "") + (v === 0 ? "0.00" : v);
-      return `<td><span class="cell-main">${e}</span> / <span class="cell-change ${cls}">${t}</span></td>`;
-    };
-    const rowCells = (dd, de) => {
-      if (!dd && !de) return `<td colspan="4">-</td>`;
-      return METRICS.map(m => deltaCell(dd ? dd[m] : null, de ? de[m] : null)).join("");
-    };
-    keys.forEach((k, idx) => {
-      const g = map.get(k);
-      const altCls = idx % 2 === 1 ? " row-group-alt" : "";
-      const trWeekly = document.createElement("tr");
-      trWeekly.className = "row-weekly" + altCls;
-      trWeekly.innerHTML = `<td class="time-cell">${shortDate(k)}</td>`
-        + `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
-        + rowCells(g && g.weekly, g && g.weeklyEnd);
-      tbody.appendChild(trWeekly);
-    });
-    return;
-  }
-
-  if (tableMode === "hourly") {
-    const rows = hourlyRows
-      .map(r => ({ ...r, _dt: parseTime(r["时间"]), _type: r["榜单"] || "" }))
-      .filter(r => r._dt);
-    if (!rows.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
-      return;
-    }
-    const byTime = new Map();
-    for (const r of rows) {
-      const key = fmtTime(r._dt);
-      if (!byTime.has(key)) byTime.set(key, { dt: r._dt, 日榜: null, 周榜: null });
-      const g = byTime.get(key);
-      if (r._type === "日榜") g["日榜"] = r;
-      else if (r._type === "周榜") g["周榜"] = r;
-    }
-    const keys = [...byTime.keys()]
-      .sort((a, b) => byTime.get(b).dt - byTime.get(a).dt)
-      .slice(0, 12);
-    keys.forEach((key, idx) => {
-      const g = byTime.get(key);
-      const altCls = idx % 2 === 1 ? " row-group-alt" : "";
-      const trDaily = document.createElement("tr");
-      trDaily.className = "row-daily" + altCls;
-      trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
-        + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
-        + renderCellsFromCombined(g["日榜"]);
-      tbody.appendChild(trDaily);
-      const trWeekly = document.createElement("tr");
-      trWeekly.className = "row-weekly" + altCls;
-      trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
-        + renderCellsFromCombined(g["周榜"]);
-      tbody.appendChild(trWeekly);
-    });
-    return;
-  }
-
-  const daily = dailyRows.map(r => ({ ...r, _type: "日榜", _dt: parseTime(r["时间"]) })).filter(r => r._dt);
-  const weekly = weeklyRows.map(r => ({ ...r, _type: "周榜", _dt: parseTime(r["时间"]) })).filter(r => r._dt);
-  const map = new Map();
-  for (const r of [...daily, ...weekly]) {
-    const key = fmtTime(r._dt);
-    if (!map.has(key)) map.set(key, { dt: r._dt });
-    map.get(key)[r._type] = r;
-  }
-  const keys = [...map.keys()]
-    .sort((a, b) => map.get(b).dt - map.get(a).dt)
-    .slice(0, 12);
-  if (!keys.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
-    return;
-  }
-  const renderCells = (group, type) => {
-    const r = group[type];
-    return TABLE_FIELDS.map(f => {
-      if (!r) return `<td>-</td>`;
-      let val = r[f.key] || "-";
-      if (f.key === "综合得分" && type === "周榜") val = weekScoreVal(r) ?? "-";
-      // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
-      let changeKey = f.changeKey;
-      if (f.key === "综合得分" && type === "周榜") changeKey = "综合原值涨幅";
-      const change = (r[changeKey] || "").trim();
-      let changeText = "-", cls = "flat";
-      if (change && change !== "-") {
-        const num = parseFloat(change);
-        if (!isNaN(num)) {
-          if (num < 0) {
-            changeText = "-";
-          } else {
-            changeText = (num > 0 ? "+" : "") + (num === 0 ? "0.00" : change);
-            cls = num > 0 ? "up" : "flat";
-          }
-        }
-      }
-      return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
-    }).join("");
-  };
-  keys.forEach((key, idx) => {
-    const group = map.get(key);
-    const altCls = idx % 2 === 1 ? " row-group-alt" : "";
-    const trDaily = document.createElement("tr");
-    trDaily.className = "row-daily" + altCls;
-    trDaily.innerHTML = `<td rowspan="2" class="time-cell">${key}</td>`
-      + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
-      + renderCells(group, "日榜");
-    tbody.appendChild(trDaily);
-    const trWeekly = document.createElement("tr");
-    trWeekly.className = "row-weekly" + altCls;
-    trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
-      + renderCells(group, "周榜");
-    tbody.appendChild(trWeekly);
-  });
-}
-
-function renderCellsFromCombined(r) {
-  return TABLE_FIELDS.map(f => {
-    if (!r) return `<td>-</td>`;
-    let val = r[f.key] || "-";
-    if (f.key === "综合得分" && isWeeklyRow(r)) val = weekScoreVal(r) ?? "-";
-    // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
-    let changeKey = f.changeKey;
-    if (f.key === "综合得分" && isWeeklyRow(r)) changeKey = "综合原值涨幅";
-    const change = (r[changeKey] || "").trim();
-    let changeText = "-", cls = "flat";
-    if (change && change !== "-") {
-      const num = parseFloat(change);
-      if (!isNaN(num)) {
-        if (num < 0) {
-          changeText = "-";
-        } else {
-          changeText = (num > 0 ? "+" : "") + (num === 0 ? "0.00" : change);
-          cls = num > 0 ? "up" : "flat";
-        }
-      }
-    }
-    return `<td><span class="cell-main">${val}</span> / <span class="cell-change ${cls}">${changeText}</span></td>`;
-  }).join("");
-}
-
-function dailySeries() {
-  const groups = new Map();
-  for (const r of dailyRows) {
-    const dt = parseTime(r["时间"]);
-    if (!dt) continue;
-    const key = businessDay(dt);
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ dt, r });
-  }
-
-  const allKeys = [...groups.keys()].sort();
-  const keys = allKeys.slice(-7);
-  const todayKey = keys.length ? keys[keys.length - 1] : null;
-  const prevKeys = keys.slice(0, -1);
-
-  const fullSlots = [];
-  for (let h = 6; h <= 23; h++) fullSlots.push(`${String(h).padStart(2, "0")}:06`);
-  fullSlots.push("00:16");
-
-  function buildBySlot(dayKey) {
-    const bySlot = new Map();
-    if (!dayKey) return bySlot;
-    const list = groups.get(dayKey)
-      .filter(x => {
-        const h = x.dt.getHours();
-        const m = x.dt.getMinutes();
-        if (h === 0 && m === 16) return true;
-        return h * 60 + m >= 6 * 60 + 6;
-      })
-      .sort((a, b) => a.dt - b.dt);
-    for (const { dt, r } of list) {
-      const slot = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-      if (!bySlot.has(slot)) bySlot.set(slot, { dt, r });
-    }
-    return bySlot;
-  }
-
-  const todaySlots = buildBySlot(todayKey);
-
-  const labels = [], axisLabels = [];
-  const todayData = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-
-  for (const slot of fullSlots) {
-    labels.push(slot);
-    axisLabels.push(slot);
-    const t = todaySlots.get(slot);
-    for (const m of METRICS) {
-      todayData[m].push(t ? (parseFloat(t.r[m]) || null) : null);
-    }
-  }
-
-  const prevDays = prevKeys.map(k => {
-    const slots = buildBySlot(k);
-    const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-    for (const slot of fullSlots) {
-      const p = slots.get(slot);
-      for (const m of METRICS) {
-        data[m].push(p ? (parseFloat(p.r[m]) || null) : null);
-      }
-    }
-    return { key: k, data };
-  });
-
-  return {
-    labels,
-    axisLabels,
-    data: todayData,
-    prevData: prevDays.length ? prevDays[prevDays.length - 1].data : { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] },
-    prevDays,
-    todayKey,
-    yestKey: prevDays.length ? prevDays[prevDays.length - 1].key : null,
-    last: pickLast(groups),
-    lastDay: null
-  };
-}
-
-function weeklySeries() {
-  const now = new Date();
-  const weekKey = businessWeek(now);
-  // 周榜总分取「综合得分原值」列
-  const list = weeklyRows
-    .map(r => ({ dt: parseTime(r["时间"]), r }))
-    .filter(x => x.dt && businessWeek(x.dt) === weekKey)
-    .sort((a, b) => a.dt - b.dt);
-  const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
-  const labels = [], axisLabels = [];
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  const pickHours = [0, 4, 8, 12, 16, 20];
-  const byDayHour = new Map();
-  for (const { dt, r } of list) {
-    const dk = dateKey(dt);
-    const h = dt.getHours();
-    if (!pickHours.includes(h)) continue;
-    if (dt.getMinutes() !== 26) continue;
-    if (!byDayHour.has(dk)) byDayHour.set(dk, new Map());
-    byDayHour.get(dk).set(h, { dt, r });
-  }
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    const p = n => String(n).padStart(2, "0");
-    const dk = dateKey(d);
-    const dayLabel = `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
-    const hourMap = byDayHour.get(dk);
-    for (let j = 0; j < pickHours.length; j++) {
-      const h = pickHours[j];
-      labels.push(`${dayLabel} ${p(h)}:26`);
-      axisLabels.push(j === 0 ? dayLabel : "");
-      const hit = hourMap ? hourMap.get(h) : null;
-      for (const m of METRICS) data[m].push(
-        hit ? (m === "综合得分" ? weekScoreVal(hit.r) : (parseFloat(hit.r[m]) || null)) : null
-      );
-    }
-  }
-  const lastItem = list.length ? list[list.length - 1] : null;
-  return { labels, axisLabels, data, last: lastItem };
-}
-
-function pickLast(groups) {
-  let latest = null;
-  for (const list of groups.values()) {
-    for (const item of list) {
-      if (!latest || item.dt > latest.dt) latest = item;
-    }
-  }
-  return latest;
-}
-
-function deltaAt(series, idx, key) {
-  const arr = series.data[key];
-  const cur = arr[idx];
-  if (cur === null || cur === undefined) return null;
-  for (let j = idx - 1; j >= 0; j--) {
-    if (arr[j] !== null && arr[j] !== undefined) {
-      return cur - arr[j];
-    }
-  }
-  return null;
-}
-
-function mixColor(hex, ratio) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const gray = (r + g + b) / 3;
-  const mix = c => Math.round(c + (gray - c) * ratio);
-  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
-}
-
-function renderLineChart() {
-  const series = lineTab === "daily" ? dailySeries() : weeklySeries();
-  const legendEl = document.getElementById("lineLegend");
-
-  if (lineTab === "daily") {
-    // 今日：只显示彩色圆点 + 名称
-    const todayItems = LINE_FIELDS.map(f =>
-      `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
-    ).join("");
-    // 昨日：虚线更密更细，按指定颜色
-    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
-    const yestItem = `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${shortDate(series.yestKey)}</span>`;
-    legendEl.innerHTML = todayItems + "　" + yestItem;
-  } else {
-    legendEl.innerHTML =
-      LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
-  }
-
-  const titleEl = document.getElementById("lineTitle");
-  titleEl.textContent = lineTab === "daily" ? "分数趋势 · 日榜" : "分数趋势 · 周榜";
-
-  if (!chartLine) chartLine = echarts.init(document.getElementById("chartLine"));
-
-  let seriesOpt;
-  if (lineTab === "daily") {
-    seriesOpt = [];
-    LINE_FIELDS.forEach(f => {
-      seriesOpt.push({
-        name: f.label + "（今日）",
-        type: "line",
-        data: series.data[f.key],
-        smooth: false,
-        symbol: "circle",
-        symbolSize: 3,
-        connectNulls: false,
-        itemStyle: { color: f.color },
-        lineStyle: { width: 2, color: f.color },
-        emphasis: { focus: "series" }
-      });
-    });
-    // 昨日：只画最近一天，虚线密且细，颜色按指标指定
-    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
-    LINE_FIELDS.forEach((f, fi) => {
-      seriesOpt.push({
-        name: f.label + "（昨日）",
-        type: "line",
-        data: series.prevData[f.key],
-        smooth: false,
-        symbol: "circle",
-        symbolSize: 2,
-        connectNulls: false,
-        itemStyle: { color: yestColors[fi] },
-        lineStyle: { width: 1, color: yestColors[fi], type: [3, 2] },
-        emphasis: { focus: "series" }
-      });
-    });
-  } else {
-    seriesOpt = LINE_FIELDS.map(f => ({
-      name: f.label,
-      type: "line",
-      data: series.data[f.key],
-      smooth: false,
-      symbol: "circle",
-      symbolSize: 3,
-      connectNulls: false,
-      itemStyle: { color: f.color },
-      lineStyle: { width: 2, color: f.color },
-      emphasis: { focus: "series" }
-    }));
-  }
-
-  let min = Infinity, max = -Infinity;
-  const scan = arr => arr.forEach(v => {
-    if (v !== null && v !== undefined && !isNaN(v)) {
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
-  });
-  Object.values(series.data).forEach(scan);
-  if (series.prevData) Object.values(series.prevData).forEach(scan);
-
-  let yMin, yMax;
-  if (!isFinite(min) || !isFinite(max)) {
-    yMin = 0; yMax = 100;
-  } else {
-    const pad = Math.max((max - min) * 0.1, 1);
-    yMin = Math.floor((min - pad) / 5) * 5;
-    yMax = Math.ceil((max + pad) / 5) * 5;
-    if (yMax > 100) yMax = 100;
-    if (yMax <= yMin) yMax = yMin + 5;
-    if (yMin < 0) yMin = 0;
-  }
-
-  chartLine.setOption({
-    tooltip: {
-      trigger: "axis",
-      confine: true,
-      formatter: function (params) {
-        if (!params.length) return "";
-        const i = params[0].dataIndex;
-        const label = series.labels[i];
-        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
-
-        if (lineTab !== "daily") {
-          // 周榜：保持原逻辑（按值排序）
-          const sorted = params.filter(p => p.value !== null && p.value !== undefined).sort((a, b) => b.value - a.value);
-          if (!sorted.length) {
-            html += `<div style="color:#999;">无数据</div>`;
-            return html;
-          }
-          sorted.forEach(p => {
-            const field = LINE_FIELDS.find(f => f.label === p.seriesName);
-            const d = field ? deltaAt(series, i, field.key) : null;
-            let deltaText = "-", deltaColor = "#999";
-            if (d !== null && !isNaN(d)) {
-              deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
-              deltaColor = d > 0 ? "#ea3690" : "#999";
-            }
-            html += `<div style="display:flex;align-items:center;gap:12px;min-width:230px;line-height:20px;">`
-              + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
-              + `<span>${p.marker}</span>`
-              + `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.seriesName}</span>`
-              + `<span style="margin-left:auto;font-weight:bold;color:#333;">${p.value}</span>`
-              + `</span>`
-              + `<span style="width:60px;text-align:right;white-space:nowrap;font-weight:bold;color:${deltaColor};">${deltaText}</span>`
-              + `</div>`;
-          });
-          return html;
-        }
-
-        // 日榜：固定顺序，各历史日 / 今日各自“值 / 涨幅”
-        const dayCols = series.prevDays.map(d =>
-          ({ key: d.key, label: shortDate(d.key), arr: d.data })
-        );
-        dayCols.push({ key: "today", label: "今日", arr: series.data });
-
-        const deltaFor = (arr, idx) => {
-          const cur = arr[idx];
-          if (cur === null || cur === undefined) return null;
-          for (let j = idx - 1; j >= 0; j--) {
-            if (arr[j] !== null && arr[j] !== undefined) return cur - arr[j];
-          }
-          return null;
-        };
-
-        const fmtDelta = (d) => {
-          if (d === null || d === undefined || isNaN(d)) return { text: "-", color: "#999" };
-          return {
-            text: (d > 0 ? "+" : "") + d.toFixed(2),
-            color: d > 0 ? "#ea3690" : "#999"
-          };
-        };
-
-        const compact = window.innerWidth < 900;
-        const dateW = compact ? 40 : 52;
-        const metW = compact ? 64 : 92;
-        const gapW = compact ? 5 : 14;
-        const fontSize = compact ? 10 : 12;
-        const headSize = compact ? 9 : 11;
-        const dotSize = compact ? 4 : 7;
-        const minW = dateW + 4 + (LINE_FIELDS.length - 1) * gapW + LINE_FIELDS.length * (metW + 8);
-
-        // 表头：指标名称（带彩色圆点），日期与总分间距小，维度列间距大
-        html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:16px;font-size:${headSize}px;">`
-          + `<span style="width:${dateW}px;color:#bbb;margin-right:4px;">日期</span>`
-          + `<span style="width:${metW}px;text-align:right;white-space:nowrap;">`
-          + `<span style="display:inline-block;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${LINE_FIELDS[0].color};margin-right:2px;"></span>`
-          + `<span>${LINE_FIELDS[0].label}</span></span>`
-          + LINE_FIELDS.slice(1).map(f =>
-            `<span style="width:${metW}px;text-align:right;white-space:nowrap;margin-left:${gapW}px;">`
-            + `<span style="display:inline-block;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${f.color};margin-right:2px;"></span>`
-            + `<span">${f.label}</span></span>`
-          ).join("")
-          + `</div>`;
-
-        // 每天一行，时间倒序：今日在前
-        [...dayCols].reverse().forEach((col, rowIdx) => {
-          const isToday = col.key === "today";
-          if (rowIdx === 1) html += `<div style="height:1px;background:#f3e6ee;margin:3px 0;"></div>`;
-          const cells = LINE_FIELDS.map((f, ci) => {
-            const arr = col.arr[f.key];
-            const v = arr ? arr[i] : null;
-            const has = v !== null && v !== undefined;
-            const d = has ? deltaFor(arr, i) : null;
-            const fd = fmtDelta(d);
-            const dColor = (d !== null && d !== undefined && !isNaN(d) && d > 0)
-              ? (isToday ? "#ea3690" : "#fa8c16")
-              : "#999";
-            const gapHtml = ci > 0 ? `margin-left:${gapW}px;` : "";
-            return `<span style="width:${metW}px;text-align:right;white-space:nowrap;font-size:${fontSize}px;${gapHtml}">`
-              + `${has ? v : "-"} / `
-              + `<span style="color:${dColor};">${fd.text}</span></span>`;
-          }).join("");
-          html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:17px;">`
-            + `<span style="width:${dateW}px;margin-right:4px;color:${isToday ? "#ea3690" : "#888"};font-weight:${isToday ? "bold" : "normal"};font-size:${headSize}px;">`
-            + `${isToday ? "今日" : col.label}</span>`
-            + cells
-            + `</div>`;
-        });
-
-        return html;
-      }
-    },
-    grid: { left: "2%", right: "5%", bottom: "14%", top: "8%", containLabel: true },
-    xAxis: {
-      type: "category",
-      boundaryGap: false,
-      data: series.axisLabels,
-      axisLabel: {
-        interval: lineTab === "daily" ? 3 : 0,
-        fontSize: 10,
-        color: "#888",
-        rotate: 45,
-        formatter: function (value) { return value || ""; }
-      },
-      axisLine: { lineStyle: { color: "#f0d6e4" } }
-    },
-    yAxis: {
-      type: "value",
-      min: yMin,
-      max: yMax,
-      minInterval: 1,
-      axisLabel: { fontSize: 10, color: "#888" },
-      axisLine: { lineStyle: { color: "#f0d6e4" } },
-      splitLine: { lineStyle: { color: "#faf0f6" } }
-    },
-    series: seriesOpt
-  }, true);
-  chartLine.resize();
-}
-
-function hourDiffArr(vals, dp = 2) {
-  // 增幅为每小时的增幅：与上一有效取值之差（非累计）
-  const out = [];
-  let prev = null;
-  (vals || []).forEach((v, i) => {
-    if (v === null || v === undefined || isNaN(v)) { out.push(null); return; }
-    out.push(prev === null ? null : +(v - prev).toFixed(dp));
-    prev = v;
-  });
-  return out;
-}
-
-function renderDeltaChart() {
-  const series = dailySeries();
-  const legendEl = document.getElementById("deltaLegend");
-  const color = DELTA_COLORS[deltaDim];
-  const yestColor = DELTA_YEST_COLORS[deltaDim];
-
-  const todayDelta = hourDiffArr(series.data[deltaDim]);
-  const prevDeltas = series.prevDays.map(d => ({ key: d.key, data: hourDiffArr(d.data[deltaDim]) }));
-  const yest = prevDeltas.length ? prevDeltas[prevDeltas.length - 1] : null;
-  const older = prevDeltas.slice(0, -1);
-
-  if (legendEl) {
-    const yestDate = series.yestKey ? shortDate(series.yestKey) : "-";
-    legendEl.innerHTML =
-      `<span class="item"><span class="dot" style="background:${color}"></span>今日</span>`
-      + `<span class="item"><span class="dot" style="background:${yestColor}"></span>${yestDate}</span>`
-      + `<span class="item"><span class="dot" style="background:#ccc"></span>其余近5天</span>`;
-  }
-
-  if (!chartDelta) chartDelta = echarts.init(document.getElementById("chartDelta"));
-
-  const seriesOpt = [];
-  older.forEach(p => {
-    seriesOpt.push({
-      name: shortDate(p.key),
-      type: "line",
-      data: p.data,
-      smooth: false,
-      symbol: "none",
-      connectNulls: false,
-      itemStyle: { color: "#ccc" },
-      lineStyle: { width: 1, color: "#ccc" },
-      emphasis: { focus: "series" }
-    });
-  });
-  if (yest) {
-    seriesOpt.push({
-      name: shortDate(yest.key) + "（昨日）",
-      type: "line",
-      data: yest.data,
-      smooth: false,
-      symbol: "circle",
-      symbolSize: 2,
-      connectNulls: false,
-      itemStyle: { color: yestColor },
-      lineStyle: { width: 1, color: yestColor },
-      emphasis: { focus: "series" }
-    });
-  }
-  seriesOpt.push({
-    name: "今日",
-    type: "line",
-    data: todayDelta,
-    smooth: false,
-    symbol: "circle",
-    symbolSize: 3,
-    connectNulls: false,
-    itemStyle: { color: color },
-    lineStyle: { width: 2, color: color },
-    emphasis: { focus: "series" }
-  });
-
-  const yAxisCfg = deltaYAxis([todayDelta, ...prevDeltas.map(p => p.data)]);
-
-  chartDelta.setOption({
-    tooltip: {
-      trigger: "axis",
-      confine: true,
-      formatter: function (params) {
-        if (!params.length) return "";
-        const i = params[0].dataIndex;
-        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${series.labels[i]}</div>`;
-        params.slice().reverse().forEach(p => {
-          const v = p.value;
-          if (v === null || v === undefined || isNaN(v)) return;
-          const txt = (v > 0 ? "+" : "") + (+v).toFixed(2);
-          const c = v > 0 ? "#ea3690" : (v < 0 ? "#27ae60" : "#999");
-          html += `<div style="display:flex;align-items:center;gap:10px;min-width:150px;line-height:20px;font-size:12px;">`
-            + `<span>${p.marker}</span>`
-            + `<span>${p.seriesName}</span>`
-            + `<span style="margin-left:auto;font-weight:bold;color:${c};">${txt}</span>`
-            + `</div>`;
-        });
-        return html;
-      }
-    },
-    grid: { left: "2%", right: "5%", bottom: "14%", top: "8%", containLabel: true },
-    xAxis: {
-      type: "category",
-      boundaryGap: false,
-      data: series.axisLabels,
-      axisLabel: {
-        interval: 3,
-        fontSize: 10,
-        color: "#888",
-        rotate: 45,
-        formatter: function (value) { return value || ""; }
-      },
-      axisLine: { lineStyle: { color: "#f0d6e4" } }
-    },
-    yAxis: {
-      type: "value",
-      ...yAxisCfg,
-      axisLabel: {
-        fontSize: 10,
-        color: "#888",
-        formatter: function (v) { return (v > 0 ? "+" : "") + v; }
-      },
-      axisLine: { lineStyle: { color: "#f0d6e4" } },
-      splitLine: { lineStyle: { color: "#faf0f6" } }
-    },
-    series: seriesOpt
-  }, true);
-  chartDelta.resize();
-}
-
-// 增幅图表共用 y 轴：最低 0、最大值自适应、固定等间距刻度；maxCap 可选上限（超出部分不展示）
-function deltaYAxis(arrs, maxCap) {
-  let maxV = 0;
-  arrs.forEach(arr => arr.forEach(v => {
-    if (v !== null && v !== undefined && !isNaN(v) && v > maxV) maxV = v;
-  }));
-  if (typeof maxCap === "number") maxV = Math.min(maxV, maxCap);
-  let interval, yMax;
-  if (maxV <= 0) {
-    interval = 1; yMax = 5;
-  } else {
-    const raw = maxV * 1.05;
-    interval = 0.5;
-    for (const c of [0.5, 1, 2, 5, 10, 20]) {
-      interval = c;
-      if (Math.ceil(raw / c) <= 6) break;
-    }
-    yMax = Math.ceil(raw / interval) * interval;
-  }
-  if (typeof maxCap === "number" && yMax > maxCap) yMax = maxCap;
-  return { min: 0, max: yMax, interval: interval };
-}
-
-// 周榜增幅：数据取周榜（weekly.csv），每条曲线窗口为当天 00:26 → 次日 00:16，每小时取一个点；
-// 增幅为与上一小时点之差（非累计）
-function deltaWeekSeries() {
-  // 窗口起点(≥00:26)的行归属当天；≤00:16 的行为前一天窗口的收尾
-  const groups = new Map(), closePool = new Map();
-  for (const r of weeklyRows) {
-    const dt = parseTime(r["时间"]);
-    if (!dt) continue;
-    const tod = dt.getHours() * 60 + dt.getMinutes();
-    if (tod <= 16) {
-      const k = dateKey(dt);
-      if (!closePool.has(k)) closePool.set(k, []);
-      closePool.get(k).push({ dt, r });
-    } else {
-      const k = dateKey(dt);
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push({ dt, r });
-    }
-  }
-  const allKeys = [...groups.keys()].sort();
-  const keys = allKeys.slice(-7);
-  const p2 = n => String(n).padStart(2, "0");
-
-  function addDay(k) {
-    const [y, mo, d] = k.split("-").map(Number);
-    return dateKey(new Date(y, mo - 1, d + 1));
-  }
-
-  function curveOfDay(k) {
-    const pts = (groups.get(k) || []).map(({ dt, r }) => ({ dt, r, closing: false }));
-    pts.sort((a, b) => a.dt - b.dt);
-    const pool = closePool.get(addDay(k)) || [];
-    let closePt = null;
-    for (const { dt, r } of pool) {
-      if (!closePt || dt > closePt.dt) closePt = { dt, r }; // 取最晚一次（如 00:16）
-    }
-    if (closePt) pts.push({ dt: closePt.dt, r: closePt.r, closing: true });
-    const hourly = [];
-    let lastHour = -1;
-    for (const p of pts) {
-      if (p.closing) { hourly.push(p); continue; }
-      const h = p.dt.getHours();
-      if (h !== lastHour) { hourly.push(p); lastHour = h; }
-    }
-    return hourly;
-  }
-
-  const slotIdx = new Map(), axis = [], labels = [];
-  const raw = keys.map(k => ({ key: k, pts: curveOfDay(k) }));
-  const labOf = p => p.closing
-    ? `次日${p2(p.dt.getHours())}:${p2(p.dt.getMinutes())}`
-    : `${p2(p.dt.getHours())}:${p2(p.dt.getMinutes())}`;
-  raw.forEach(({ pts }) => pts.forEach(p => {
-    const lab = labOf(p);
-    if (!slotIdx.has(lab)) { slotIdx.set(lab, axis.length); axis.push(lab); labels.push(lab); }
-  }));
-
-  const curves = raw.map(({ key, pts }) => {
-    const vals = new Array(axis.length).fill(null);
-    pts.forEach(p => {
-      const v = deltaDimWeek === "综合得分" ? weekScoreVal(p.r) : parseFloat(p.r[deltaDimWeek]);
-      if (!isNaN(v)) vals[slotIdx.get(labOf(p))] = v;
-    });
-    return { key, arr: hourDiffArr(vals, deltaDimWeek === "综合得分" ? 5 : 2) };
-  });
-
-  return { axis, labels, curves, todayKey: keys.length ? keys[keys.length - 1] : null, yestKey: keys.length > 1 ? keys[keys.length - 2] : null };
-}
-
-function renderDeltaWeekChart() {
-  const series = deltaWeekSeries();
-  const legendEl = document.getElementById("deltaWeekLegend");
-  const color = DELTA_COLORS[deltaDimWeek];
-  const yestColor = DELTA_YEST_COLORS[deltaDimWeek];
-
-  const yestIdx = series.curves.findIndex(c => c.key === series.yestKey);
-  const todayIdx = series.curves.findIndex(c => c.key === series.todayKey);
-  const older = series.curves.filter((c, i) => i !== todayIdx && i !== yestIdx);
-  const yest = yestIdx >= 0 ? series.curves[yestIdx] : null;
-  const today = todayIdx >= 0 ? series.curves[todayIdx] : null;
-
-  if (legendEl) {
-    const yestDate = series.yestKey ? shortDate(series.yestKey) : "-";
-    legendEl.innerHTML =
-      `<span class="item"><span class="dot" style="background:${color}"></span>今日</span>`
-      + `<span class="item"><span class="dot" style="background:${yestColor}"></span>${yestDate}</span>`
-      + `<span class="item"><span class="dot" style="background:#ccc"></span>其余近5天</span>`;
-  }
-
-  if (!chartDeltaWeek) chartDeltaWeek = echarts.init(document.getElementById("chartDeltaWeek"));
-
-  const seriesOpt = [];
-  older.forEach(c => {
-    seriesOpt.push({
-      name: shortDate(c.key),
-      type: "line",
-      data: c.arr,
-      smooth: false,
-      symbol: "none",
-      connectNulls: true,
-      itemStyle: { color: "#ccc" },
-      lineStyle: { width: 1, color: "#ccc" },
-      emphasis: { focus: "series" }
-    });
-  });
-  if (yest) {
-    seriesOpt.push({
-      name: shortDate(yest.key) + "（昨日）",
-      type: "line",
-      data: yest.arr,
-      smooth: false,
-      symbol: "circle",
-      symbolSize: 2,
-      connectNulls: true,
-      itemStyle: { color: yestColor },
-      lineStyle: { width: 1, color: yestColor },
-      emphasis: { focus: "series" }
-    });
-  }
-  if (today) {
-    seriesOpt.push({
-      name: "今日",
-      type: "line",
-      data: today.arr,
-      smooth: false,
-      symbol: "circle",
-      symbolSize: 3,
-      connectNulls: true,
-      itemStyle: { color: color },
-      lineStyle: { width: 2, color: color },
-      emphasis: { focus: "series" }
-    });
-  }
-
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), deltaDimWeek === "综合得分" ? 0.2 : 1);
-
-  chartDeltaWeek.setOption({
-    tooltip: {
-      trigger: "axis",
-      confine: true,
-      formatter: function (params) {
-        if (!params.length) return "";
-        const i = params[0].dataIndex;
-        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${series.labels[i]}</div>`;
-        params.slice().reverse().forEach(p => {
-          const v = p.value;
-          if (v === null || v === undefined || isNaN(v)) return;
-          const txt = (v > 0 ? "+" : "") + (+v).toFixed(deltaDimWeek === "综合得分" ? 5 : 2);
-          const c = v > 0 ? "#ea3690" : (v < 0 ? "#27ae60" : "#999");
-          html += `<div style="display:flex;align-items:center;gap:10px;min-width:150px;line-height:20px;font-size:12px;">`
-            + `<span>${p.marker}</span>`
-            + `<span>${p.seriesName}</span>`
-            + `<span style="margin-left:auto;font-weight:bold;color:${c};">${txt}</span>`
-            + `</div>`;
-        });
-        return html;
-      }
-    },
-    grid: { left: "2%", right: "5%", bottom: "14%", top: "8%", containLabel: true },
-    xAxis: {
-      type: "category",
-      boundaryGap: false,
-      data: series.axis,
-      axisLabel: {
-        interval: 2,
-        fontSize: 10,
-        color: "#888",
-        rotate: 45,
-        formatter: function (value) { return value === "次日00:16" ? "次日" : (value || ""); }
-      },
-      axisLine: { lineStyle: { color: "#f0d6e4" } }
-    },
-    yAxis: {
-      type: "value",
-      ...yAxisCfg,
-      axisLabel: {
-        fontSize: 10,
-        color: "#888",
-        formatter: function (v) { return (v > 0 ? "+" : "") + v; }
-      },
-      axisLine: { lineStyle: { color: "#f0d6e4" } },
-      splitLine: { lineStyle: { color: "#faf0f6" } }
-    },
-    series: seriesOpt
-  }, true);
-  chartDeltaWeek.resize();
-}
-
-document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    lineTab = this.dataset.range;
-    renderLineChart();
-  });
-});
-let dimsTab = "综合得分";
-function renderDimsTable() {
-  const theadRow = document.querySelector("#dims-table thead tr");
-  const tbody = document.querySelector("#dims-table tbody");
-  if (!theadRow || !tbody) return;
-  const p = n => String(n).padStart(2, "0");
-
-  const now = new Date();
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    days.push(dateKey(d));
-  }
-
-  // 表头：日期/涨幅（涨幅用每日涨幅表里周榜的「最后一条 - 第一条」）
-  const { map: perdayDeltaMap } = perDayDeltas();
-  const headDelta = k => {
-    const g = perdayDeltaMap.get(k);
-    const v = g && g.weekly ? g.weekly[dimsTab] : null;
-    if (v === null || v === undefined || isNaN(v)) return "-";
-    if (v < 0) return "-";
-    if (v === 0) return "0.00";
-    return "+" + v.toFixed(2);
-  };
-  theadRow.innerHTML = `<th class="col-time-sticky">时间</th>`
-    + days.map(dk => `<th>${shortDate(dk)} (${headDelta(dk)})</th>`).join("");
-
-  const byDateSlot = new Map();
-  for (const r of dailyRows) {
-    const dt = parseTime(r["时间"]);
-    if (!dt) continue;
-    if (dt.getMinutes() !== 6 && !(dt.getHours() === 0 && dt.getMinutes() === 16)) continue;
-    const slot = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
-    const dk = dateKey(dt);
-    if (!byDateSlot.has(dk)) byDateSlot.set(dk, new Map());
-    byDateSlot.get(dk).set(slot, r);
-  }
-
-  const slots = [];
-  for (let h = 6; h <= 23; h++) slots.push(`${p(h)}:06`);
-  slots.push("00:16");
-
-  const prevNums = new Array(days.length).fill(null);
-  tbody.innerHTML = "";
-  slots.forEach(slot => {
-    const vals = days.map((dk, idx) => {
-      let r = null;
-      if (slot === "00:16") {
-        const next = new Date(monday);
-        next.setDate(next.getDate() + idx + 1);
-        const m = byDateSlot.get(dateKey(next));
-        r = m ? m.get("00:16") : null;
-      } else {
-        const m = byDateSlot.get(dk);
-        r = m ? m.get(slot) : null;
-      }
-      const v = r ? parseFloat(r[dimsTab]) : NaN;
-      return isNaN(v) ? null : { text: r[dimsTab] || "-", num: v };
-    });
-    let max = -Infinity;
-    let min = Infinity;
-    vals.forEach(v => {
-      if (!v) return;
-      if (v.num > max) max = v.num;
-      if (v.num < min) min = v.num;
-    });
-    const dNums = vals.map((v, i) => {
-      if (!v) return null;
-      const p = prevNums[i];
-      return p === null ? null : Math.round((v.num - p) * 100) / 100;
-    });
-    const dMax = Math.max(...dNums.filter(x => x !== null && x > 0), -Infinity);
-    const cells = vals.map((v, i) => {
-      if (!v) return `<td>-</td>`;
-      // 涨幅：与前一条（同日上一时间段）作差，06:06 用 -；当日涨幅最大者加粗高亮
-      let dHtml = '<span style="color:#999;">-</span>';
-      const d = dNums[i];
-      if (d !== null && d > 0) {
-        const hiD = d === dMax ? ";font-weight:bold" : "";
-        dHtml = `<span style="color:#fa8c16${hiD};">+${d.toFixed(2)}</span>`;
-      } else if (d === 0) {
-        dHtml = '<span style="color:#999;">0.00</span>';
-      }
-      prevNums[i] = v.num;
-      const hi = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
-        : (v.num === min ? ' style="color:#b0b0b0;font-weight:bold;"' : "");
-      return `<td style="color:#555;"><span${hi}>${v.text}</span><span style="color:#bbb;margin:0 3px;">/</span>${dHtml}</td>`;
-    }).join("");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="time-cell">${slot}</td>${cells}`;
-    tbody.appendChild(tr);
-  });
-}
-
-document.querySelectorAll('#modeTabs .mode-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    tableMode = this.dataset.mode;
-    renderTable();
-  });
-});
-
-document.querySelectorAll('#dimsTabs .mode-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    dimsTab = this.dataset.dim;
-    renderDimsTable();
-  });
-});
-
-document.querySelectorAll('#deltaDimTabs .range-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    deltaDim = this.dataset.dim;
-    renderDeltaChart();
-  });
-});
-
-document.querySelectorAll('#deltaDimWeekTabs .range-btn').forEach(btn => {
-  btn.addEventListener("click", function () {
-    this.parentNode.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    deltaDimWeek = this.dataset.dim;
-    renderDeltaWeekChart();
-  });
-});
-
-function exportName(card) {
-  let base = "";
-  const t = card.querySelector(".title");
-  if (t) base = t.textContent.split("·")[0].trim();
-  const act = card.querySelector(".range-btn.active, .mode-btn.active");
-  if (act) {
-    if (act.dataset.range) base += "-" + (act.dataset.range === "daily" ? "日榜" : "周榜");
-    else if (act.textContent) base += "-" + act.textContent;
-  }
-  const p = n => String(n).padStart(2, "0");
-  const now = new Date();
-  return `${base}-${now.getMonth() + 1}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}`;
-}
-
-document.querySelectorAll(".export-btn").forEach(btn => {
-  btn.addEventListener("click", function () {
-    if (typeof html2canvas !== "function") return;
-    const card = this.closest(".card");
-    if (!card) return;
-    this.disabled = true;
-    html2canvas(card, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
-      const a = document.createElement("a");
-      a.download = exportName(card) + ".png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    }).catch(() => {}).finally(() => {
-      this.disabled = false;
-    });
-  });
-});
-
-async function load() {
-  const [d, w, wb, h] = await Promise.all([
-    fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
-    fetch(WEEKLY_CSV).then(r => r.text()).catch(() => ""),
-    fetch(WEIBO_CSV).then(r => r.text()).catch(() => ""),
-    fetch(HOURLY_CSV).then(r => r.text()).catch(() => "")
-  ]);
-  dailyRows = d ? parseCSV(d) : [];
-  weeklyRows = w ? parseCSV(w) : [];
-  weiboRows = wb ? parseCSV(wb) : [];
-  hourlyRows = h ? parseCSV(h) : [];
-
-  const all = [...dailyRows, ...weeklyRows, ...weiboRows, ...hourlyRows]
-    .map(r => parseTime(r["时间"]))
-    .filter(Boolean)
-    .sort((a, b) => b - a);
-  document.getElementById("update-time").textContent =
-    all.length ? `最近更新：${fmtTime(all[0])}` : "暂无数据";
-
-  renderHeadlineDeltas();
-  renderTable();
-  renderDimsTable();
-  renderLineChart();
-  renderDeltaChart();
-  renderDeltaWeekChart();
-}
-load();
-
-let resizeTimer;
-window.addEventListener("resize", function () {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(function () {
-    if (chartLine) chartLine.resize();
-    if (chartDelta) chartDelta.resize();
-    if (chartDeltaWeek) chartDeltaWeek.resize();
-  }, 200);
-});
-</script>
-</body>
-</html>
+      return (h === 0 && m === 16) || h * 
