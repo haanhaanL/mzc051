@@ -1,5 +1,6 @@
 import csv, os, re
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal
 import httpx
 
 ID = "567563613"
@@ -66,6 +67,31 @@ def calc_delta(cur, prev):
         return ""
 
 
+def _to_float(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _dec_places(v):
+    s = str(v).strip()
+    if not s or s == "-":
+        return 0
+    return len(s.split(".")[1]) if "." in s else 0
+
+
+def _delta_keep_places(cur, prev):
+    """按两个操作数中小数位更多的位数保留差值。"""
+    a = _to_float(cur)
+    b = _to_float(prev)
+    if a is None or b is None:
+        return ""
+    dp = max(_dec_places(cur), _dec_places(prev))
+    d = Decimal(str(cur).strip()) - Decimal(str(prev).strip())
+    return format(d, f".{dp}f")
+
+
 def save(path, row):
     is_daily = row["榜单"] == "日榜"
     cols = COLS_DAILY if is_daily else COLS_WEEKLY
@@ -97,7 +123,9 @@ def save(path, row):
 
     raw_change = ""
     if not is_daily and last:
-        raw_change = calc_delta(row.get("综合得分原值", ""), last.get("综合得分原值"))
+        raw_change = _delta_keep_places(
+            row.get("综合得分原值", ""), last.get("综合得分原值")
+        )
 
     new = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8-sig") as f:
@@ -141,13 +169,6 @@ def _read_rows(path):
             r[c] = r.get(c) or ""
         r["_dt"] = _parse_time(r.get("时间", ""))
     return [r for r in rows if r["_dt"]]
-
-
-def _to_float(v):
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
 
 
 def _delta(cur, prev):
@@ -205,6 +226,7 @@ def _build_weekly_06(rows):
     周榜：只取 06 分。
     周一 1:06 与周一 0:26 作差（0:26 从 weekly.csv 找，不进入输出）。
     其余 06 分与前一条 06 分作差。
+    综合原值涨幅按两个操作数中小数位更多的位数保留。
     """
     rows_all = sorted(rows, key=lambda r: r["_dt"])
     rows_06 = [r for r in rows_all if r["_dt"].minute == 6]
@@ -228,7 +250,9 @@ def _build_weekly_06(rows):
                 rec["涨幅"] = _delta(r.get("综合得分"), base.get("综合得分"))
                 for d in DIMS:
                     rec[f"{d}涨幅"] = _delta(r.get(d), base.get(d))
-                rec["综合原值涨幅"] = _delta(r.get("综合得分原值"), base.get("综合得分原值"))
+                rec["综合原值涨幅"] = _delta_keep_places(
+                    r.get("综合得分原值"), base.get("综合得分原值")
+                )
             else:
                 rec["涨幅"] = r.get("涨幅", "")
                 for d in DIMS:
@@ -244,7 +268,9 @@ def _build_weekly_06(rows):
                 rec["涨幅"] = _delta(r.get("综合得分"), prev.get("综合得分"))
                 for d in DIMS:
                     rec[f"{d}涨幅"] = _delta(r.get(d), prev.get(d))
-                rec["综合原值涨幅"] = _delta(r.get("综合得分原值"), prev.get("综合得分原值"))
+                rec["综合原值涨幅"] = _delta_keep_places(
+                    r.get("综合得分原值"), prev.get("综合得分原值")
+                )
 
         out.append(rec)
         prev = r
