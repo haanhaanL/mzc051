@@ -11,7 +11,7 @@ COLS_DAILY = ["时间", "榜单", "排名", "综合得分", "涨幅",
               "播放热度", "播放热度涨幅",
               "畅销度", "畅销度涨幅",
               "推荐度", "推荐度涨幅"]
-COLS_WEEKLY = COLS_DAILY + ["综合得分原值"]
+COLS_WEEKLY = COLS_DAILY + ["综合得分原值", "综合原值涨幅"]
 
 BJ = timezone(timedelta(hours=8))
 DIMS = ["播放热度", "畅销度", "推荐度"]
@@ -95,6 +95,10 @@ def save(path, row):
         else:
             dim_changes[d] = calc_delta(row[d], last.get(d)) if last else ""
 
+    raw_change = ""
+    if not is_daily and last:
+        raw_change = calc_delta(row.get("综合得分原值", ""), last.get("综合得分原值"))
+
     new = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
@@ -109,6 +113,7 @@ def save(path, row):
         ]
         if not is_daily:
             out.append(row.get("综合得分原值", ""))
+            out.append(raw_change)
         w.writerow(out)
     print("写入", path, row["榜单"], row["综合得分"], score_change)
 
@@ -223,19 +228,23 @@ def _build_weekly_06(rows):
                 rec["涨幅"] = _delta(r.get("综合得分"), base.get("综合得分"))
                 for d in DIMS:
                     rec[f"{d}涨幅"] = _delta(r.get(d), base.get(d))
+                rec["综合原值涨幅"] = _delta(r.get("综合得分原值"), base.get("综合得分原值"))
             else:
                 rec["涨幅"] = r.get("涨幅", "")
                 for d in DIMS:
                     rec[f"{d}涨幅"] = r.get(f"{d}涨幅", "")
+                rec["综合原值涨幅"] = ""
         else:
             if prev is None:
                 rec["涨幅"] = ""
                 for d in DIMS:
                     rec[f"{d}涨幅"] = ""
+                rec["综合原值涨幅"] = ""
             else:
                 rec["涨幅"] = _delta(r.get("综合得分"), prev.get("综合得分"))
                 for d in DIMS:
                     rec[f"{d}涨幅"] = _delta(r.get(d), prev.get(d))
+                rec["综合原值涨幅"] = _delta(r.get("综合得分原值"), prev.get("综合得分原值"))
 
         out.append(rec)
         prev = r
