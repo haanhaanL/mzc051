@@ -1549,7 +1549,7 @@ function renderDeltaWeekChart() {
     });
   }
 
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 0.1);
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 0.5);
 
   chartDeltaWeek.setOption({
     tooltip: {
@@ -1703,7 +1703,7 @@ function renderDimsTable() {
       prevNums[i] = v.num;
       const hi = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
         : (v.num === min ? ' style="color:#b0b0b0;font-weight:bold;"' : "");
-      return `<td style="color:#555;"><span${hi}>${v.text}</span>/${dHtml}</td>`;
+      return `<td style="color:#555;"><span${hi}>${v.text}</span><span style="color:#bbb;margin:0 3px;">/</span>${dHtml}</td>`;
     }).join("");
     const tr = document.createElement("tr");
     tr.innerHTML = `<td class="time-cell">${slot}</td>${cells}`;
