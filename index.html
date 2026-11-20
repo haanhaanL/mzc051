@@ -134,6 +134,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     position: sticky; left: 0; z-index: 1; color: #555; background-color: #ffffff;
     width: 84px; min-width: 84px; max-width: 84px;
 }
+#data-table col.col-score { width: 25%; }
 .recent-table col.col-time { width: 84px; }
 .recent-table col.col-type { width: 44px; }
 .recent-table col.col-metric { width: auto; }
@@ -243,12 +244,12 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .recent-table th.col-type-sticky,
     .recent-table td.type-cell { left: 76px; }
 
-    #data-table { min-width: 440px; font-size: 10px; }
+    #data-table { min-width: 460px; font-size: 10px; }
     #data-table th, #data-table tbody td { padding: 4px 1px; }
+    #data-table col.col-score { width: 26%; }
     #data-table tbody td {
         height: 28px;
         line-height: 18px;
-        white-space: normal;
     }
 
     #weibo-table tbody tr { height: 28px; }
@@ -295,7 +296,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
             <colgroup>
               <col class="col-time">
               <col class="col-type">
-              <col class="col-metric">
+              <col class="col-metric col-score">
               <col class="col-metric">
               <col class="col-metric">
               <col class="col-metric">
