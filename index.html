@@ -1639,7 +1639,7 @@ function renderDimsTable() {
   const { map: perdayDeltaMap } = perDayDeltas();
   const headDelta = k => {
     const g = perdayDeltaMap.get(k);
-    const v = g && g.weekly ? g.weekly[dimsTab] : null;
+const v = g && g.daily ? g.daily[dimsTab] : null;
     if (v === null || v === undefined || isNaN(v)) return "-";
     if (v < 0) return "-";
     if (v === 0) return "0.00";
@@ -1692,16 +1692,14 @@ function renderDimsTable() {
       const p = prevNums[i];
       return p === null ? null : Math.round((v.num - p) * 100) / 100;
     });
-    const dMax = Math.max(...dNums.filter(x => x !== null && x > 0), -Infinity);
     const cells = vals.map((v, i) => {
       if (!v) return `<td>-</td>`;
       // 涨幅：与前一条（同日上一时间段）作差，06:06 用 -；当日涨幅最大者加粗高亮
       let dHtml = '<span style="color:#999;">-</span>';
       const d = dNums[i];
-      if (d !== null && d > 0) {
-        const hiD = d === dMax ? ";font-weight:bold" : "";
-        dHtml = `<span style="color:#fa8c16${hiD};">+${d.toFixed(2)}</span>`;
-      } else if (d === 0) {
+if (d !== null && d > 0) {
+  dHtml = `<span style="color:#fa8c16;">+${d.toFixed(2)}</span>`;
+} else if (d === 0) {
         dHtml = '<span style="color:#999;">0.00</span>';
       }
       prevNums[i] = v.num;
