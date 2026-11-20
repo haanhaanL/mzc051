@@ -1553,7 +1553,7 @@ function renderDeltaWeekChart() {
     });
   }
 
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), deltaDimWeek === "综合得分" ? 0.2 : 1);
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), deltaDimWeek === "综合得分" ? 0.1 : 1);
 
   chartDeltaWeek.setOption({
     tooltip: {
