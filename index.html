@@ -667,13 +667,15 @@ function perDayDeltas() {
     const end = f[f.length - 1];
     const g = ensure(k);
     g.daily = {};
+    g.dailyEnd = {};
     for (const m of METS) {
       const a = num(end.r[m]), b = num(start.r[m]);
       g.daily[m] = (a !== null && b !== null) ? a - b : null;
+      g.dailyEnd[m] = a;
     }
   }
 
-  // 周榜：当天00:26 → 次日≤00:16（无收尾数据时取当天最新一条）
+  // 周榜：周一窗口为 00:26 → 次日00:16，其余为当天00:16 → 次日00:16（无收尾数据时取当天最新一条）
   const wByCal = new Map();
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
@@ -685,17 +687,23 @@ function perDayDeltas() {
   for (const [k, list] of wByCal) {
     list.sort((a, b) => a.dt - b.dt);
     const mins = x => x.dt.getHours() * 60 + x.dt.getMinutes();
-    const start = list.filter(x => mins(x) >= 26)[0] || list[0];
     const [y, mo, d] = k.split("-").map(Number);
+    const isMonday = new Date(y, mo - 1, d).getDay() === 1;
+    const start = isMonday
+      ? (list.filter(x => mins(x) >= 26)[0] || list[0])
+      : (list.filter(x => mins(x) <= 16).slice(-1)[0]
+        || list.filter(x => mins(x) >= 26)[0] || list[0]);
     const nextList = wByCal.get(dateKey(new Date(y, mo - 1, d + 1))) || [];
     const closePool = nextList.filter(x => mins(x) <= 16);
     const end = closePool.length ? closePool[closePool.length - 1] : list[list.length - 1];
     const g = ensure(k);
     g.weekly = {};
+    g.weeklyEnd = {};
     for (const m of METS) {
       const a = m === "综合得分" ? (weekScoreVal(end.r) ?? num(end.r[m])) : num(end.r[m]);
       const b = m === "综合得分" ? (weekScoreVal(start.r) ?? num(start.r[m])) : num(start.r[m]);
       g.weekly[m] = (a !== null && b !== null) ? a - b : null;
+      g.weeklyEnd[m] = a;
     }
   }
 
@@ -719,16 +727,19 @@ function renderTable() {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
       return;
     }
-    const deltaCell = d => {
-      if (d === null || d === undefined || isNaN(d)) return `<td>-</td>`;
-      const v = +(+d).toFixed(2);
-      const cls = v > 0 ? "up" : (v < 0 ? "down" : "flat");
-      const sign = v > 0 ? "+" : "";
-      return `<td><span class="cell-main">${sign}${v.toFixed(2)}</span></td>`;
+    const deltaCell = (d, e) => {
+      const hasD = d !== null && d !== undefined && !isNaN(d);
+      const hasE = e !== null && e !== undefined && !isNaN(e);
+      if (!hasD && !hasE) return `<td>-</td>`;
+      const v = hasD ? +(+d).toFixed(2) : null;
+      const cls = (!hasD || v === 0) ? "flat" : (v > 0 ? "up" : "down");
+      const t = hasD ? ((v > 0 ? "+" : "") + v.toFixed(2)) : "-";
+      const vs = hasE ? e : "-";
+      return `<td><span class="cell-main">${vs}</span> / <span class="cell-change ${cls}">${t}</span></td>`;
     };
-    const rowCells = dd => {
-      if (!dd) return `<td colspan="4">-</td>`;
-      return METRICS.map(m => deltaCell(dd[m])).join("");
+    const rowCells = (dd, de) => {
+      if (!dd && !de) return `<td colspan="4">-</td>`;
+      return METRICS.map(m => deltaCell(dd ? dd[m] : null, de ? de[m] : null)).join("");
     };
     keys.forEach((k, idx) => {
       const g = map.get(k);
@@ -737,12 +748,12 @@ function renderTable() {
       trDaily.className = "row-daily" + altCls;
       trDaily.innerHTML = `<td rowspan="2" class="time-cell">${shortDate(k)}</td>`
         + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
-        + (g && g.daily ? rowCells(g.daily) : `<td colspan="4">-</td>`);
+        + rowCells(g && g.daily, g && g.dailyEnd);
       tbody.appendChild(trDaily);
       const trWeekly = document.createElement("tr");
       trWeekly.className = "row-weekly" + altCls;
       trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
-        + (g && g.weekly ? rowCells(g.weekly) : `<td colspan="4">-</td>`);
+        + rowCells(g && g.weekly, g && g.weeklyEnd);
       tbody.appendChild(trWeekly);
     });
     return;
