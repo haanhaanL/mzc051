@@ -1640,7 +1640,7 @@ function renderDimsTable() {
     return "+" + v.toFixed(2);
   };
   theadRow.innerHTML = `<th class="col-time-sticky">时间</th>`
-    + days.map(dk => `<th>${shortDate(dk)}/${headDelta(dk)}</th>`).join("");
+    + days.map(dk => `<th>${shortDate(dk)} (${headDelta(dk)})</th>`).join("");
 
   const byDateSlot = new Map();
   for (const r of dailyRows) {
