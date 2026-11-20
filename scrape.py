@@ -65,11 +65,23 @@ def calc_delta(cur, prev):
 def save(path, row):
     last = read_last_row(path, row["榜单"])
 
-    score_change = (row.get("涨幅") or "").strip()
-    if not score_change and last:
-        score_change = calc_delta(row["综合得分"], last.get("综合得分"))
-
     now = datetime.now(BJ)
+    is_early_daily = (
+        row["榜单"] == "日榜"
+        and (now.hour, now.minute) >= (0, 26)
+        and (now.hour, now.minute) <= (5, 56)
+    )
+
+    score_change = (row.get("涨幅") or "").strip()
+    if is_early_daily:
+        # 0:26–5:56：有官方值用官方值，空则 0.00，不作差
+        if not score_change:
+            score_change = "0.00"
+    else:
+        # 其余时段：原逻辑（官方值优先，空则与上一条日榜作差）
+        if not score_change and last:
+            score_change = calc_delta(row["综合得分"], last.get("综合得分"))
+
     is_daily_0606 = (
         row["榜单"] == "日榜"
         and now.hour == 6
