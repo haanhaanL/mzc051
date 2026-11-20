@@ -352,9 +352,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title">增幅趋势 · 日榜</div>
         <div class="range-tabs" data-chart="deltaRange" id="deltaDimTabs">
-          <button class="range-btn active" data-dim="播放热度">播放热度</button>
+          <button class="range-btn" data-dim="播放热度">播放热度</button>
           <button class="range-btn" data-dim="畅销度">畅销度</button>
           <button class="range-btn" data-dim="推荐度">推荐度</button>
+          <button class="range-btn active" data-dim="综合得分">总分</button>
         </div>
         <div class="chart-legend-text" id="deltaLegend"></div>
         <div class="chart-wrapper-flex" id="chartDelta"></div>
@@ -363,9 +364,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title">增幅趋势 · 周榜</div>
         <div class="range-tabs" data-chart="deltaWeekRange" id="deltaDimWeekTabs">
-          <button class="range-btn active" data-dim="播放热度">播放热度</button>
+          <button class="range-btn" data-dim="播放热度">播放热度</button>
           <button class="range-btn" data-dim="畅销度">畅销度</button>
           <button class="range-btn" data-dim="推荐度">推荐度</button>
+          <button class="range-btn active" data-dim="综合得分">总分</button>
         </div>
         <div class="chart-legend-text" id="deltaWeekLegend"></div>
         <div class="chart-wrapper-flex" id="chartDeltaWeek"></div>
@@ -396,13 +398,13 @@ const TABLE_FIELDS = [
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
 const DELTA_DIMS = ["播放热度", "畅销度", "推荐度"];
-const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推荐度": "#00c853" };
-const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8" };
+const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推荐度": "#00c853", "综合得分": "#ea3690" };
+const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8", "综合得分": "#ff9dce" };
 
 let dailyRows = [], weeklyRows = [], weiboRows = [], hourlyRows = [];
 let lineTab = "daily";
 let chartLine = null, chartDelta = null, chartDeltaWeek = null;
-let deltaDim = "播放热度", deltaDimWeek = "播放热度";
+let deltaDim = "综合得分", deltaDimWeek = "综合得分";
 let tableMode = "official";
 
 function parseCSV(text) {
@@ -1473,7 +1475,7 @@ function deltaWeekSeries() {
   const curves = raw.map(({ key, pts }) => {
     const vals = new Array(axis.length).fill(null);
     pts.forEach(p => {
-      const v = parseFloat(p.r[deltaDimWeek]);
+      const v = deltaDimWeek === "综合得分" ? weekScoreVal(p.r) : parseFloat(p.r[deltaDimWeek]);
       if (!isNaN(v)) vals[slotIdx.get(labOf(p))] = v;
     });
     return { key, arr: hourDiffArr(vals) };
@@ -1547,7 +1549,7 @@ function renderDeltaWeekChart() {
     });
   }
 
-  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 1);
+  const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), 0.1);
 
   chartDeltaWeek.setOption({
     tooltip: {
@@ -1657,6 +1659,7 @@ function renderDimsTable() {
   for (let h = 6; h <= 23; h++) slots.push(`${p(h)}:06`);
   slots.push("00:16");
 
+  const prevNums = new Array(days.length).fill(null);
   tbody.innerHTML = "";
   slots.forEach(slot => {
     const vals = days.map((dk, idx) => {
@@ -1680,11 +1683,27 @@ function renderDimsTable() {
       if (v.num > max) max = v.num;
       if (v.num < min) min = v.num;
     });
-    const cells = vals.map(v => {
+    const dNums = vals.map((v, i) => {
+      if (!v) return null;
+      const p = prevNums[i];
+      return p === null ? null : Math.round((v.num - p) * 100) / 100;
+    });
+    const dMax = Math.max(...dNums.filter(x => x !== null && x > 0), -Infinity);
+    const cells = vals.map((v, i) => {
       if (!v) return `<td>-</td>`;
-      const hl = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
+      // 涨幅：与前一条（同日上一时间段）作差，06:06 用 -；当日涨幅最大者加粗高亮
+      let dHtml = '<span style="color:#999;">-</span>';
+      const d = dNums[i];
+      if (d !== null && d > 0) {
+        const hiD = d === dMax ? ";font-weight:bold" : "";
+        dHtml = `<span style="color:#fa8c16${hiD};">+${d.toFixed(2)}</span>`;
+      } else if (d === 0) {
+        dHtml = '<span style="color:#999;">0.00</span>';
+      }
+      prevNums[i] = v.num;
+      const hi = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
         : (v.num === min ? ' style="color:#b0b0b0;font-weight:bold;"' : "");
-      return `<td${hl}>${v.text}</td>`;
+      return `<td><span${hi}>${v.text}</span>/${dHtml}</td>`;
     }).join("");
     const tr = document.createElement("tr");
     tr.innerHTML = `<td class="time-cell">${slot}</td>${cells}`;
