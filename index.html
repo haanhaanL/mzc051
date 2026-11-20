@@ -1264,13 +1264,13 @@ function renderLineChart() {
   chartLine.resize();
 }
 
-function hourDiffArr(vals) {
+function hourDiffArr(vals, dp = 2) {
   // 增幅为每小时的增幅：与上一有效取值之差（非累计）
   const out = [];
   let prev = null;
   (vals || []).forEach((v, i) => {
     if (v === null || v === undefined || isNaN(v)) { out.push(null); return; }
-    out.push(prev === null ? null : +(v - prev).toFixed(2));
+    out.push(prev === null ? null : +(v - prev).toFixed(dp));
     prev = v;
   });
   return out;
@@ -1478,7 +1478,7 @@ function deltaWeekSeries() {
       const v = deltaDimWeek === "综合得分" ? weekScoreVal(p.r) : parseFloat(p.r[deltaDimWeek]);
       if (!isNaN(v)) vals[slotIdx.get(labOf(p))] = v;
     });
-    return { key, arr: hourDiffArr(vals) };
+    return { key, arr: hourDiffArr(vals, deltaDimWeek === "综合得分" ? 5 : 2) };
   });
 
   return { axis, labels, curves, todayKey: keys.length ? keys[keys.length - 1] : null, yestKey: keys.length > 1 ? keys[keys.length - 2] : null };
@@ -1562,7 +1562,7 @@ function renderDeltaWeekChart() {
         params.slice().reverse().forEach(p => {
           const v = p.value;
           if (v === null || v === undefined || isNaN(v)) return;
-          const txt = (v > 0 ? "+" : "") + (+v).toFixed(2);
+          const txt = (v > 0 ? "+" : "") + (+v).toFixed(deltaDimWeek === "综合得分" ? 5 : 2);
           const c = v > 0 ? "#ea3690" : (v < 0 ? "#27ae60" : "#999");
           html += `<div style="display:flex;align-items:center;gap:10px;min-width:150px;line-height:20px;font-size:12px;">`
             + `<span>${p.marker}</span>`
