@@ -822,11 +822,10 @@ function renderTable() {
       if (!r) return `<td>-</td>`;
       let val = r[f.key] || "-";
       if (f.key === "综合得分" && type === "周榜") val = weekScoreVal(r) ?? "-";
-      // 周榜总分涨幅读「综合原值涨幅」列，缺失时回退「涨幅」
+      // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
       let changeKey = f.changeKey;
       if (f.key === "综合得分" && type === "周榜") changeKey = "综合原值涨幅";
-      let change = (r[changeKey] || "").trim();
-      if (f.key === "综合得分" && type === "周榜" && (!change || change === "-")) change = (r[f.changeKey] || "").trim();
+      const change = (r[changeKey] || "").trim();
       let changeText = "-", cls = "flat";
       if (change && change !== "-") {
         const num = parseFloat(change);
@@ -860,11 +859,10 @@ function renderCellsFromCombined(r) {
     if (!r) return `<td>-</td>`;
     let val = r[f.key] || "-";
     if (f.key === "综合得分" && isWeeklyRow(r)) val = weekScoreVal(r) ?? "-";
-    // 周榜总分涨幅读「综合原值涨幅」列，缺失时回退「涨幅」
+    // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
     let changeKey = f.changeKey;
     if (f.key === "综合得分" && isWeeklyRow(r)) changeKey = "综合原值涨幅";
-    let change = (r[changeKey] || "").trim();
-    if (f.key === "综合得分" && isWeeklyRow(r) && (!change || change === "-")) change = (r[f.changeKey] || "").trim();
+    const change = (r[changeKey] || "").trim();
     let changeText = "-", cls = "flat";
     if (change && change !== "-") {
       const num = parseFloat(change);
