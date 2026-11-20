@@ -9,7 +9,8 @@ HEAD = {"User-Agent": "Mozilla/5.0", "Referer": "https://yobang.tencentmusic.com
 COLS = ["时间", "榜单", "排名", "综合得分", "涨幅",
         "播放热度", "播放热度涨幅",
         "畅销度", "畅销度涨幅",
-        "推荐度", "推荐度涨幅"]
+        "推荐度", "推荐度涨幅",
+        "综合得分原值"]
 BJ = timezone(timedelta(hours=8))
 DIMS = ["播放热度", "畅销度", "推荐度"]
 
@@ -39,6 +40,7 @@ def get_weekly(c):
         "播放热度": idx.get(1, ""),
         "畅销度": idx.get(4, ""),
         "推荐度": idx.get(5, ""),
+        "综合得分原值": d.get("uniIndexNew", ""),
     }
 
 
@@ -106,6 +108,7 @@ def save(path, row):
             row["播放热度"], dim_changes["播放热度"],
             row["畅销度"], dim_changes["畅销度"],
             row["推荐度"], dim_changes["推荐度"],
+            row.get("综合得分原值", ""),
         ])
     print("写入", path, row["榜单"], row["综合得分"], score_change)
 
@@ -129,6 +132,8 @@ def _read_rows(path):
     with open(path, "r", encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
     for r in rows:
+        for c in COMBINED_06_COLS:
+            r[c] = r.get(c) or ""
         r["_dt"] = _parse_time(r.get("时间", ""))
     return [r for r in rows if r["_dt"]]
 
