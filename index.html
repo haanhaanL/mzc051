@@ -352,10 +352,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title">增幅趋势 · 日榜</div>
         <div class="range-tabs" data-chart="deltaRange" id="deltaDimTabs">
+          <button class="range-btn active" data-dim="综合得分">总分</button>
           <button class="range-btn" data-dim="播放热度">播放热度</button>
           <button class="range-btn" data-dim="畅销度">畅销度</button>
           <button class="range-btn" data-dim="推荐度">推荐度</button>
-          <button class="range-btn active" data-dim="综合得分">总分</button>
         </div>
         <div class="chart-legend-text" id="deltaLegend"></div>
         <div class="chart-wrapper-flex" id="chartDelta"></div>
@@ -364,10 +364,10 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
       <div class="card chart-card">
         <div class="title">增幅趋势 · 周榜</div>
         <div class="range-tabs" data-chart="deltaWeekRange" id="deltaDimWeekTabs">
+          <button class="range-btn active" data-dim="综合得分">总分</button>
           <button class="range-btn" data-dim="播放热度">播放热度</button>
           <button class="range-btn" data-dim="畅销度">畅销度</button>
           <button class="range-btn" data-dim="推荐度">推荐度</button>
-          <button class="range-btn active" data-dim="综合得分">总分</button>
         </div>
         <div class="chart-legend-text" id="deltaWeekLegend"></div>
         <div class="chart-wrapper-flex" id="chartDeltaWeek"></div>
@@ -1703,7 +1703,7 @@ function renderDimsTable() {
       prevNums[i] = v.num;
       const hi = v.num === max ? ' style="color:#ea3690;font-weight:bold;"'
         : (v.num === min ? ' style="color:#b0b0b0;font-weight:bold;"' : "");
-      return `<td><span${hi}>${v.text}</span>/${dHtml}</td>`;
+      return `<td style="color:#555;"><span${hi}>${v.text}</span>/${dHtml}</td>`;
     }).join("");
     const tr = document.createElement("tr");
     tr.innerHTML = `<td class="time-cell">${slot}</td>${cells}`;
