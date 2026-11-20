@@ -284,6 +284,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
           <div class="mode-tabs" id="modeTabs">
             <button class="mode-btn active" data-mode="official">官方</button>
             <button class="mode-btn" data-mode="hourly">每小时</button>
+            <button class="mode-btn" data-mode="perday">每日</button>
           </div>
         </div>
         <div class="table-scroll-box">
@@ -639,6 +640,69 @@ function renderHeadlineDeltas() {
     + `</div>`;
 }
 
+// —— 每日涨幅：日榜每天06:06 → 次日00:16、周榜每天00:26 → 次日00:16，四项指标作差 ——
+function perDayDeltas() {
+  const METS = METRICS;
+  const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  const out = new Map();
+  const ensure = k => { if (!out.has(k)) out.set(k, { daily: null, weekly: null }); return out.get(k); };
+
+  // 日榜：按 businessDay 分组（06:06 ~ 次日00:16）
+  const dGroups = new Map();
+  for (const r of dailyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    const k = businessDay(dt);
+    if (!dGroups.has(k)) dGroups.set(k, []);
+    dGroups.get(k).push({ dt, r });
+  }
+  for (const [k, list] of dGroups) {
+    list.sort((a, b) => a.dt - b.dt);
+    const f = list.filter(x => {
+      const h = x.dt.getHours(), m = x.dt.getMinutes();
+      return (h === 0 && m === 16) || h * 60 + m >= 6 * 60 + 6;
+    });
+    if (!f.length) continue;
+    const start = f.find(x => x.dt.getHours() === 6 && x.dt.getMinutes() === 6) || f[0];
+    const end = f[f.length - 1];
+    const g = ensure(k);
+    g.daily = {};
+    for (const m of METS) {
+      const a = num(end.r[m]), b = num(start.r[m]);
+      g.daily[m] = (a !== null && b !== null) ? a - b : null;
+    }
+  }
+
+  // 周榜：当天00:26 → 次日≤00:16（无收尾数据时取当天最新一条）
+  const wByCal = new Map();
+  for (const r of weeklyRows) {
+    const dt = parseTime(r["时间"]);
+    if (!dt) continue;
+    const k = dateKey(dt);
+    if (!wByCal.has(k)) wByCal.set(k, []);
+    wByCal.get(k).push({ dt, r });
+  }
+  for (const [k, list] of wByCal) {
+    list.sort((a, b) => a.dt - b.dt);
+    const mins = x => x.dt.getHours() * 60 + x.dt.getMinutes();
+    const start = list.filter(x => mins(x) >= 26)[0] || list[0];
+    const [y, mo, d] = k.split("-").map(Number);
+    const nextList = wByCal.get(dateKey(new Date(y, mo - 1, d + 1))) || [];
+    const closePool = nextList.filter(x => mins(x) <= 16);
+    const end = closePool.length ? closePool[closePool.length - 1] : list[list.length - 1];
+    const g = ensure(k);
+    g.weekly = {};
+    for (const m of METS) {
+      const a = m === "综合得分" ? (weekScoreVal(end.r) ?? num(end.r[m])) : num(end.r[m]);
+      const b = m === "综合得分" ? (weekScoreVal(start.r) ?? num(start.r[m])) : num(start.r[m]);
+      g.weekly[m] = (a !== null && b !== null) ? a - b : null;
+    }
+  }
+
+  const keys = [...out.keys()].sort().reverse().slice(0, 7);
+  return { keys, map: out };
+}
+
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
@@ -646,7 +710,42 @@ function renderTable() {
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
       ? "由你榜-每小时 · 最近 12 条"
-      : "由你榜-官方CD · 最近 12 条";
+      : (tableMode === "perday" ? "由你榜-每日涨幅 · 最近 7 天" : "由你榜-官方CD · 最近 12 条");
+  }
+
+  if (tableMode === "perday") {
+    const { keys, map } = perDayDeltas();
+    if (!keys.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">暂无数据</td></tr>';
+      return;
+    }
+    const deltaCell = d => {
+      if (d === null || d === undefined || isNaN(d)) return `<td>-</td>`;
+      const v = +(+d).toFixed(2);
+      const cls = v > 0 ? "up" : (v < 0 ? "down" : "flat");
+      const sign = v > 0 ? "+" : "";
+      return `<td><span class="cell-main">${sign}${v.toFixed(2)}</span></td>`;
+    };
+    const rowCells = dd => {
+      if (!dd) return `<td colspan="4">-</td>`;
+      return METRICS.map(m => deltaCell(dd[m])).join("");
+    };
+    keys.forEach((k, idx) => {
+      const g = map.get(k);
+      const altCls = idx % 2 === 1 ? " row-group-alt" : "";
+      const trDaily = document.createElement("tr");
+      trDaily.className = "row-daily" + altCls;
+      trDaily.innerHTML = `<td rowspan="2" class="time-cell">${shortDate(k)}</td>`
+        + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
+        + (g && g.daily ? rowCells(g.daily) : `<td colspan="4">-</td>`);
+      tbody.appendChild(trDaily);
+      const trWeekly = document.createElement("tr");
+      trWeekly.className = "row-weekly" + altCls;
+      trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
+        + (g && g.weekly ? rowCells(g.weekly) : `<td colspan="4">-</td>`);
+      tbody.appendChild(trWeekly);
+    });
+    return;
   }
 
   if (tableMode === "hourly") {
@@ -707,7 +806,11 @@ function renderTable() {
       if (!r) return `<td>-</td>`;
       let val = r[f.key] || "-";
       if (f.key === "综合得分" && type === "周榜") val = weekScoreVal(r) ?? "-";
-      const change = (r[f.changeKey] || "").trim();
+      // 周榜总分涨幅读「综合原值涨幅」列，缺失时回退「涨幅」
+      let changeKey = f.changeKey;
+      if (f.key === "综合得分" && type === "周榜") changeKey = "综合原值涨幅";
+      let change = (r[changeKey] || "").trim();
+      if (f.key === "综合得分" && type === "周榜" && (!change || change === "-")) change = (r[f.changeKey] || "").trim();
       let changeText = "-", cls = "flat";
       if (change && change !== "-") {
         const num = parseFloat(change);
@@ -741,7 +844,11 @@ function renderCellsFromCombined(r) {
     if (!r) return `<td>-</td>`;
     let val = r[f.key] || "-";
     if (f.key === "综合得分" && isWeeklyRow(r)) val = weekScoreVal(r) ?? "-";
-    const change = (r[f.changeKey] || "").trim();
+    // 周榜总分涨幅读「综合原值涨幅」列，缺失时回退「涨幅」
+    let changeKey = f.changeKey;
+    if (f.key === "综合得分" && isWeeklyRow(r)) changeKey = "综合原值涨幅";
+    let change = (r[changeKey] || "").trim();
+    if (f.key === "综合得分" && isWeeklyRow(r) && (!change || change === "-")) change = (r[f.changeKey] || "").trim();
     let changeText = "-", cls = "flat";
     if (change && change !== "-") {
       const num = parseFloat(change);
