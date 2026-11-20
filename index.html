@@ -723,7 +723,7 @@ function renderTable() {
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
       ? "由你榜-每小时 · 最近 12 条"
-      : (tableMode === "perday" ? "由你榜-每日涨幅 · 最近 7 天" : "由你榜-官方CD · 最近 12 条");
+      : (tableMode === "perday" ? "由你榜-周榜 · 最近 7 天" : "由你榜-官方CD · 最近 12 条");
   }
 
   if (tableMode === "perday") {
@@ -749,15 +749,10 @@ function renderTable() {
     keys.forEach((k, idx) => {
       const g = map.get(k);
       const altCls = idx % 2 === 1 ? " row-group-alt" : "";
-      const trDaily = document.createElement("tr");
-      trDaily.className = "row-daily" + altCls;
-      trDaily.innerHTML = `<td rowspan="2" class="time-cell">${shortDate(k)}</td>`
-        + `<td class="type-cell"><span class="type-badge daily">日榜</span></td>`
-        + rowCells(g && g.daily, g && g.dailyEnd);
-      tbody.appendChild(trDaily);
       const trWeekly = document.createElement("tr");
       trWeekly.className = "row-weekly" + altCls;
-      trWeekly.innerHTML = `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
+      trWeekly.innerHTML = `<td class="time-cell">${shortDate(k)}</td>`
+        + `<td class="type-cell"><span class="type-badge weekly">周榜</span></td>`
         + rowCells(g && g.weekly, g && g.weeklyEnd);
       tbody.appendChild(trWeekly);
     });
@@ -1634,8 +1629,18 @@ function renderDimsTable() {
     days.push(dateKey(d));
   }
 
+  // 表头：日期/涨幅（涨幅用每日涨幅表里周榜的「最后一条 - 第一条」）
+  const { map: perdayDeltaMap } = perDayDeltas();
+  const headDelta = k => {
+    const g = perdayDeltaMap.get(k);
+    const v = g && g.weekly ? g.weekly[dimsTab] : null;
+    if (v === null || v === undefined || isNaN(v)) return "-";
+    if (v < 0) return "-";
+    if (v === 0) return "0.00";
+    return "+" + v.toFixed(2);
+  };
   theadRow.innerHTML = `<th class="col-time-sticky">时间</th>`
-    + days.map(dk => `<th>${shortDate(dk)}</th>`).join("");
+    + days.map(dk => `<th>${shortDate(dk)}/${headDelta(dk)}</th>`).join("");
 
   const byDateSlot = new Map();
   for (const r of dailyRows) {
