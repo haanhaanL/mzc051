@@ -1,4 +1,4 @@
-import csv, os, re
+import csv, json, os, re
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import httpx
@@ -18,32 +18,40 @@ BJ = timezone(timedelta(hours=8))
 DIMS = ["播放热度", "畅销度", "推荐度"]
 
 
+def _parse_raw_json(c, url):
+    """把 JSON 里的数字保留为原始字面量字符串，避免 float 转换丢精度。"""
+    return json.loads(c.get(url).text, parse_float=str, parse_int=str)
+
+
 def get_daily(c):
-    d = c.get(DAILY).json()["data"][0]
+    d = _parse_raw_json(c, DAILY)["data"][0]
     e = d.get("extend") or {}
     return {
         "榜单": "日榜",
         "排名": d["rank"],
         "综合得分": d["score"],
-        "涨幅": d["incrScore"],
-        "播放热度": e.get("playIndex", ""),
-        "畅销度": e.get("payIndex", ""),
-        "推荐度": e.get("popIndex", ""),
+        "涨幅": d["incrScore"] or "",
+        "播放热度": e.get("playIndex") or "",
+        "畅销度": e.get("payIndex") or "",
+        "推荐度": e.get("popIndex") or "",
     }
 
 
 def get_weekly(c):
-    d = c.get(WEEKLY).json()["data"][0]
-    idx = {x["code"]: x["index"] for x in d.get("classifyIndices", [])}
+    d = _parse_raw_json(c, WEEKLY)["data"][0]
+    try:
+        idx = {int(x["code"]): x["index"] for x in d.get("classifyIndices") or []}
+    except (TypeError, ValueError):
+        idx = {int(float(x["code"])): x["index"] for x in d.get("classifyIndices") or []}
     return {
         "榜单": "周榜",
         "排名": d["curRank"],
         "综合得分": d["uniIndex"],
-        "涨幅": d["indexThanPre"],
-        "播放热度": idx.get(1, ""),
-        "畅销度": idx.get(4, ""),
-        "推荐度": idx.get(5, ""),
-        "综合得分原值": d.get("uniIndexNew", ""),
+        "涨幅": d["indexThanPre"] or "",
+        "播放热度": idx.get(1) or "",
+        "畅销度": idx.get(4) or "",
+        "推荐度": idx.get(5) or "",
+        "综合得分原值": d.get("uniIndexNew") or "",
     }
 
 
@@ -60,36 +68,53 @@ def read_last_row(path, chart_type):
 
 def calc_delta(cur, prev):
     try:
-        a = float(cur)
-        b = float(prev)
-        return f"{a - b:.2f}"
-    except (TypeError, ValueError):
+        d = Decimal(str(cur).strip()) - Decimal(str(prev).strip())
+        return f"{d:.2f}"
+    except (TypeError, ValueError, ArithmeticError, AttributeError, AssertionError):
         return ""
 
 
 def _to_float(v):
     try:
-        return float(v)
-    except (TypeError, ValueError):
+        return Decimal(str(v).strip())
+    except (TypeError, ValueError, ArithmeticError, AssertionError):
         return None
 
 
 def _dec_places(v):
+    """按数值字面量统计真实小数位数（支持科学计数法，如 1.23E-2）。"""
     s = str(v).strip()
-    if not s or s == "-":
+    if not s or s in ("-", "None", "null"):
         return 0
-    return len(s.split(".")[1]) if "." in s else 0
+    try:
+        t = Decimal(s).as_tuple()
+    except (ValueError, ArithmeticError, AssertionError):
+        return 0
+    return max(0, -t.exponent)
+
+
+def _clean(v):
+    """归一化为可计算的原始字面量字符串，无效值返回 None。"""
+    if v is None:
+        return None
+    s = str(v).strip()
+    if not s or s in ("-", "None", "null"):
+        return None
+    return s
 
 
 def _delta_keep_places(cur, prev):
-    """按两个操作数中小数位更多的位数保留差值。"""
-    a = _to_float(cur)
-    b = _to_float(prev)
-    if a is None or b is None:
+    """按两个操作数中小数位更多的位数保留差值（Decimal 精确计算）。"""
+    cur = _clean(cur)
+    prev = _clean(prev)
+    if cur is None or prev is None:
         return ""
-    dp = max(_dec_places(cur), _dec_places(prev))
-    d = Decimal(str(cur).strip()) - Decimal(str(prev).strip())
-    return format(d, f".{dp}f")
+    try:
+        dp = max(_dec_places(cur), _dec_places(prev))
+        d = Decimal(cur) - Decimal(prev)
+        return format(d, f".{dp}f")
+    except (ArithmeticError, AssertionError):
+        return ""
 
 
 def save(path, row):
