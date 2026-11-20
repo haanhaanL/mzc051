@@ -421,6 +421,17 @@ function parseTime(s) {
   if (!m) return null;
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
 }
+// 周榜总分统一读「综合得分原值」列，缺失时回退「综合得分」
+function weekScoreVal(r) {
+  if (!r) return null;
+  const raw = parseFloat(r["综合得分原值"]);
+  if (!isNaN(raw)) return raw;
+  const v = parseFloat(r["综合得分"]);
+  return isNaN(v) ? null : v;
+}
+function isWeeklyRow(r) {
+  return r && (r["榜单"] || "").trim() === "周榜";
+}
 function fmtTime(dt) {
   const p = n => String(n).padStart(2, "0");
   return `${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
@@ -528,8 +539,8 @@ function computeHeadlineDeltas() {
       }
 
       if (base) {
-        const a = num(cur.r["综合得分"]);
-        const b = num(base.r["综合得分"]);
+        const a = num(weekScoreVal(cur.r));
+        const b = num(weekScoreVal(base.r));
         if (a !== null && b !== null) weeklyDelta = (b - a).toFixed(2);
         DIMS.forEach(d => {
           const x = num(cur.r[d]);
@@ -694,7 +705,8 @@ function renderTable() {
     const r = group[type];
     return TABLE_FIELDS.map(f => {
       if (!r) return `<td>-</td>`;
-      const val = r[f.key] || "-";
+      let val = r[f.key] || "-";
+      if (f.key === "综合得分" && type === "周榜") val = weekScoreVal(r) ?? "-";
       const change = (r[f.changeKey] || "").trim();
       let changeText = "-", cls = "flat";
       if (change && change !== "-") {
@@ -727,7 +739,8 @@ function renderTable() {
 function renderCellsFromCombined(r) {
   return TABLE_FIELDS.map(f => {
     if (!r) return `<td>-</td>`;
-    const val = r[f.key] || "-";
+    let val = r[f.key] || "-";
+    if (f.key === "综合得分" && isWeeklyRow(r)) val = weekScoreVal(r) ?? "-";
     const change = (r[f.changeKey] || "").trim();
     let changeText = "-", cls = "flat";
     if (change && change !== "-") {
@@ -820,6 +833,7 @@ function dailySeries() {
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
+  // 周榜总分取「综合得分原值」列
   const list = weeklyRows
     .map(r => ({ dt: parseTime(r["时间"]), r }))
     .filter(x => x.dt && businessWeek(x.dt) === weekKey)
@@ -853,7 +867,9 @@ function weeklySeries() {
       labels.push(`${dayLabel} ${p(h)}:26`);
       axisLabels.push(j === 0 ? dayLabel : "");
       const hit = hourMap ? hourMap.get(h) : null;
-      for (const m of METRICS) data[m].push(hit ? (parseFloat(hit.r[m]) || null) : null);
+      for (const m of METRICS) data[m].push(
+        hit ? (m === "综合得分" ? weekScoreVal(hit.r) : (parseFloat(hit.r[m]) || null)) : null
+      );
     }
   }
   const lastItem = list.length ? list[list.length - 1] : null;
