@@ -20,25 +20,19 @@ body {
 h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .update-time { text-align: center; color: #999; font-size: 12px; margin-bottom: 12px; }
 
-/* 新增导出按钮样式 */
-.export-all-btn {
-    display: block; margin: 0 auto 12px auto;
-    background: #ea3690; color: white; font-weight: bold;
-    padding: 6px 20px; border-radius: 20px; border: none; cursor: pointer;
-    font-size: 13px; box-shadow: 0 2px 6px rgba(234,54,144,0.3);
-    transition: all 0.2s;
-}
-.export-all-btn:hover { background: #c92976; }
-.export-all-btn:disabled { background: #ccc; cursor: wait; box-shadow: none; }
-
 .headline-deltas { display: flex; justify-content: center; margin: -4px 0 14px 0; }
 .headline-deltas .delta-box {
     display: grid;
     grid-template-columns: 48px 56px 1px repeat(3, 78px);
-    align-items: center; column-gap: 8px; row-gap: 6px;
-    padding: 8px 18px; border-radius: 12px; background: #fff;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 6px;
+    padding: 8px 18px;
+    border-radius: 12px;
+    background: #fff;
     border: 1px solid rgba(234,54,144,0.25);
-    box-shadow: 0 2px 8px rgba(234,54,144,0.10); font-size: 12px;
+    box-shadow: 0 2px 8px rgba(234,54,144,0.10);
+    font-size: 12px;
 }
 .headline-deltas .delta-head { display: contents; }
 .headline-deltas .delta-head .delta-dim-head { font-size: 10px; color: #bbb; text-align: center; line-height: 14px; }
@@ -57,15 +51,26 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .headline-deltas .flat { color: #999; }
 
 .headline-deltas .delta-sep {
-    grid-column: 1 / -1; height: 1px;
-    background: rgba(234,54,144,0.18); margin: 5px 0;
+    grid-column: 1 / -1;
+    height: 1px;
+    background: rgba(234,54,144,0.18);
+    margin: 5px 0;
 }
 .headline-deltas .delta-target-label,
 .headline-deltas .delta-need-label {
-    font-size: 11px; color: #999; font-weight: normal; white-space: nowrap;
+    font-size: 11px;
+    color: #999;
+    font-weight: normal;
+    white-space: nowrap;
 }
-.headline-deltas .target-line .target-val { color: #ea3690; font-weight: bold; }
-.headline-deltas .need-line .need-val { color: #fa8c16; font-weight: bold; }
+.headline-deltas .target-line .target-val {
+    color: #ea3690;
+    font-weight: bold;
+}
+.headline-deltas .need-line .need-val {
+    color: #fa8c16;
+    font-weight: bold;
+}
 
 .card {
     background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(234,54,144,0.08);
@@ -73,11 +78,14 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .title { text-align: center; color: #ea3690; font-size: 15px; font-weight: bold; margin: 5px 0 8px 0; }
 
+/* 表格卡片标题行：标题 + 右侧切换 */
 .table-card .title-row {
     display: flex; align-items: center; justify-content: center;
     position: relative; margin: 5px 0 8px 0; padding: 0 12px;
 }
-.table-card .title-row .title { margin: 0; text-align: center; flex: 1 1 auto; }
+.table-card .title-row .title {
+    margin: 0; text-align: center; flex: 1 1 auto;
+}
 .table-card .title-row .mode-tabs {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     display: flex; gap: 6px;
@@ -96,9 +104,12 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
 }
 .export-btn:disabled { color: #bbb; border-color: #ddd; cursor: default; }
+.table-card .title-row .mode-tabs { right: 12px; }
 .chart-card { position: relative; }
 .chart-title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.chart-title-row .export-btn { position: static; transform: none; top: auto; }
+.chart-title-row .export-btn {
+    position: static; transform: none; top: auto;
+}
 
 .table-scroll-box {
     width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -137,15 +148,21 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 .recent-table td.time-cell { vertical-align: middle; }
 
 #data-table tbody td {
-    height: 32px; line-height: 20px;
-    padding-top: 0; padding-bottom: 0; vertical-align: middle;
+    height: 32px;
+    line-height: 20px;
+    padding-top: 0;
+    padding-bottom: 0;
+    vertical-align: middle;
 }
 
 #weibo-table tbody tr { height: 32px; }
 #weibo-table tbody td {
-    height: 32px !important; line-height: 32px !important;
-    padding-top: 0 !important; padding-bottom: 0 !important;
-    vertical-align: middle; box-sizing: border-box;
+    height: 32px !important;
+    line-height: 32px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    vertical-align: middle;
+    box-sizing: border-box;
 }
 
 .recent-table tbody tr.row-daily td,
@@ -185,8 +202,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; font-family: inherit;
 }
 .range-btn.active { background: #ea3690; color: #fff; border-color: #ea3690; }
-.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }
-.chart-legend-text .item { display: inline-block; margin: 0 5px; }
+.chart-legend-text { text-align: center; font-size: 12px; color: #666; margin: 0 8px 6px 8px; line-height: 1.8; }.chart-legend-text .item { display: inline-block; margin: 0 5px; }
 .chart-legend-text .dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     margin-right: 4px; vertical-align: middle;
@@ -231,10 +247,16 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     #data-table { min-width: 460px; font-size: 10px; }
     #data-table th, #data-table tbody td { padding: 4px 1px; }
     #data-table col.col-score { width: 26%; }
-    #data-table tbody td { height: 28px; line-height: 18px; }
+    #data-table tbody td {
+        height: 28px;
+        line-height: 18px;
+    }
 
     #weibo-table tbody tr { height: 28px; }
-    #weibo-table tbody td { height: 28px !important; line-height: 28px !important; }
+    #weibo-table tbody td {
+        height: 28px !important;
+        line-height: 28px !important;
+    }
 
     .table-card .title-row { justify-content: flex-start; }
     .table-card .title-row .title { text-align: left; }
@@ -256,10 +278,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <div class="container">
   <h1>阴天也会有烦恼吗</h1>
   <div class="update-time" id="update-time">加载中…</div>
-  
-  <!-- 新增的全量导出按钮 -->
-  <button id="exportAllBtn" class="export-all-btn">生成全量长图</button>
-
   <div class="headline-deltas" id="headlineDeltas"></div>
 
   <div class="page-grid">
@@ -369,6 +387,7 @@ const DAILY_CSV = "daily.csv";
 const WEEKLY_CSV = "weekly.csv";
 const WEIBO_CSV = "weibo_trend.csv";
 const HOURLY_CSV = "combined_06.csv";
+const WEIBO_FIELDS = ["阅读量", "讨论量", "互动量", "原创量"];
 const METRICS = ["综合得分", "播放热度", "畅销度", "推荐度"];
 const LINE_FIELDS = [
   { key: "综合得分", label: "总分", color: "#ea3690" },
@@ -382,6 +401,7 @@ const TABLE_FIELDS = [
   { key: "畅销度", changeKey: "畅销度涨幅" },
   { key: "推荐度", changeKey: "推荐度涨幅" }
 ];
+const DELTA_DIMS = ["播放热度", "畅销度", "推荐度"];
 const DELTA_COLORS = { "播放热度": "#7c3aed", "畅销度": "#f97316", "推荐度": "#00c853", "综合得分": "#ea3690" };
 const DELTA_YEST_COLORS = { "播放热度": "#d6befe", "畅销度": "#ffcaa5", "推荐度": "#91eeb8", "综合得分": "#ff9dce" };
 
@@ -390,7 +410,6 @@ let lineTab = "daily";
 let chartLine = null, chartDelta = null, chartDeltaWeek = null;
 let deltaDim = "综合得分", deltaDimWeek = "综合得分";
 let tableMode = "official";
-let dimsTab = "综合得分";
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -409,6 +428,7 @@ function parseTime(s) {
   if (!m) return null;
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
 }
+// 周榜总分统一读「综合得分原值」列，缺失时回退「综合得分」
 function weekScoreVal(r) {
   if (!r) return null;
   const raw = parseFloat(r["综合得分原值"]);
@@ -496,13 +516,14 @@ function computeHeadlineDeltas() {
 
   // —— 3. 日榜目标需求：取最新整点6分数据，目标 − 该分数，除以剩余小时数 ——
   const TARGET = { "播放热度": 90, "畅销度": 85, "推荐度": 96 };
-  let latestPoint = null;
+  let latestPoint = null; // 最新一条 xx:06 数据
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
     if (!dt) continue;
-    if (dt.getMinutes() !== 6) continue;
+    if (dt.getMinutes() !== 6) continue;      // 只读整点6分
     if (!latestPoint || dt > latestPoint.dt) latestPoint = { dt, r };
   }
+  // 00:16~06:00 之间（新旧一天交替）显示占位符 -
   let inResetWindow = false;
   if (latestPoint) {
     const minsOfDay = latestPoint.dt.getHours() * 60 + latestPoint.dt.getMinutes();
@@ -523,7 +544,6 @@ function computeHeadlineDeltas() {
 
   return { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas, dailyTargetNeed };
 }
-
 function renderHeadlineDeltas() {
   const { dailyDelta, weeklyDelta, dailyDimDeltas, weeklyDimDeltas, dailyTargetNeed } = computeHeadlineDeltas();
   const el = document.getElementById("headlineDeltas");
@@ -581,12 +601,14 @@ function renderHeadlineDeltas() {
     + `</div>`;
 }
 
+// —— 每日涨幅：日榜每天06:06 → 次日00:16、周榜每天00:26 → 次日00:16，四项指标作差 ——
 function perDayDeltas() {
   const METS = METRICS;
   const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
   const out = new Map();
   const ensure = k => { if (!out.has(k)) out.set(k, { daily: null, weekly: null }); return out.get(k); };
 
+  // 日榜：按 businessDay 分组（06:06 ~ 次日00:16）
   const dGroups = new Map();
   for (const r of dailyRows) {
     const dt = parseTime(r["时间"]);
@@ -607,9 +629,6 @@ function perDayDeltas() {
     const g = ensure(k);
     g.daily = {};
     g.dailyEnd = {};
-    for (const m of METS) {
-      const a = num(end.r[m]), b = num(start.r[m]);
-      g.daily[m] = (a !== null &&
     for (const m of METS) {
       const a = num(end.r[m]), b = num(start.r[m]);
       g.daily[m] = (a !== null && b !== null) ? a - b : null;
@@ -658,6 +677,7 @@ function perDayDeltas() {
 function renderTable() {
   const tbody = document.querySelector("#data-table tbody");
   tbody.innerHTML = "";
+  // 每日模式行数较少，取消表格 height:100% 拉伸，保持行高与其他 tab 一致
   const tblEl = document.getElementById("data-table");
   if (tblEl) tblEl.style.height = (tableMode === "perday") ? "auto" : "";
   const titleEl = document.getElementById("dataTableTitle");
@@ -677,6 +697,7 @@ function renderTable() {
       const hasD = d !== null && d !== undefined && !isNaN(d);
       const hasE = e !== null && e !== undefined && e !== "" && !isNaN(e);
       if (!hasD || !hasE) return `<td>-</td>`;
+      // 差值保留最大位数（去除浮点噪声）
       const v = Math.round(d * 1e10) / 1e10;
       const cls = v === 0 ? "flat" : (v > 0 ? "up" : "down");
       const t = v < 0 ? "-" : (v > 0 ? "+" : "") + (v === 0 ? "0.00" : v);
@@ -757,21 +778,10 @@ function renderTable() {
       if (!r) return `<td>-</td>`;
       let val = r[f.key] || "-";
       if (f.key === "综合得分" && type === "周榜") val = weekScoreVal(r) ?? "-";
+      // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
       let changeKey = f.changeKey;
       if (f.key === "综合得分" && type === "周榜") changeKey = "综合原值涨幅";
-      let change = (r[changeKey] || "").trim(); 
-      
-      // 网页端拦截 00:26 ~ 06:06 的日榜假涨幅
-      if (type === "日榜") {
-        const dt = parseTime(r["时间"]);
-        if (dt) {
-          const timeVal = dt.getHours() * 100 + dt.getMinutes();
-          if (timeVal >= 26 && timeVal < 606) {
-            change = "0.00";
-          }
-        }
-      }
-      
+      const change = (r[changeKey] || "").trim();
       let changeText = "-", cls = "flat";
       if (change && change !== "-") {
         const num = parseFloat(change);
@@ -809,21 +819,10 @@ function renderCellsFromCombined(r) {
     if (!r) return `<td>-</td>`;
     let val = r[f.key] || "-";
     if (f.key === "综合得分" && isWeeklyRow(r)) val = weekScoreVal(r) ?? "-";
+    // 周榜总分涨幅读「综合原值涨幅」列；该列为空时显示 -（不回退「涨幅」列）
     let changeKey = f.changeKey;
     if (f.key === "综合得分" && isWeeklyRow(r)) changeKey = "综合原值涨幅";
-    let change = (r[changeKey] || "").trim();
-    
-    // 网页端拦截 00:26 ~ 06:06 的日榜假涨幅 (兼容每小时模式)
-    if (r["榜单"] === "日榜") {
-      const dt = parseTime(r["时间"]);
-      if (dt) {
-        const timeVal = dt.getHours() * 100 + dt.getMinutes();
-        if (timeVal >= 26 && timeVal < 606) {
-          change = "0.00";
-        }
-      }
-    }
-    
+    const change = (r[changeKey] || "").trim();
     let changeText = "-", cls = "flat";
     if (change && change !== "-") {
       const num = parseFloat(change);
@@ -919,6 +918,7 @@ function dailySeries() {
 function weeklySeries() {
   const now = new Date();
   const weekKey = businessWeek(now);
+  // 周榜总分取「综合得分原值」列
   const list = weeklyRows
     .map(r => ({ dt: parseTime(r["时间"]), r }))
     .filter(x => x.dt && businessWeek(x.dt) === weekKey)
@@ -983,14 +983,25 @@ function deltaAt(series, idx, key) {
   return null;
 }
 
+function mixColor(hex, ratio) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const gray = (r + g + b) / 3;
+  const mix = c => Math.round(c + (gray - c) * ratio);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+}
+
 function renderLineChart() {
   const series = lineTab === "daily" ? dailySeries() : weeklySeries();
   const legendEl = document.getElementById("lineLegend");
 
   if (lineTab === "daily") {
+    // 今日：只显示彩色圆点 + 名称
     const todayItems = LINE_FIELDS.map(f =>
       `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`
     ).join("");
+    // 昨日：虚线更密更细，按指定颜色
     const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
     const yestItem = `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${shortDate(series.yestKey)}</span>`;
     legendEl.innerHTML = todayItems + "　" + yestItem;
@@ -1021,6 +1032,7 @@ function renderLineChart() {
         emphasis: { focus: "series" }
       });
     });
+    // 昨日：只画最近一天，虚线密且细，颜色按指标指定
     const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
     LINE_FIELDS.forEach((f, fi) => {
       seriesOpt.push({
@@ -1084,6 +1096,7 @@ function renderLineChart() {
         let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
 
         if (lineTab !== "daily") {
+          // 周榜：保持原逻辑（按值排序）
           const sorted = params.filter(p => p.value !== null && p.value !== undefined).sort((a, b) => b.value - a.value);
           if (!sorted.length) {
             html += `<div style="color:#999;">无数据</div>`;
@@ -1109,6 +1122,7 @@ function renderLineChart() {
           return html;
         }
 
+        // 日榜：固定顺序，各历史日 / 今日各自“值 / 涨幅”
         const dayCols = series.prevDays.map(d =>
           ({ key: d.key, label: shortDate(d.key), arr: d.data })
         );
@@ -1140,6 +1154,7 @@ function renderLineChart() {
         const dotSize = compact ? 4 : 7;
         const minW = dateW + 4 + (LINE_FIELDS.length - 1) * gapW + LINE_FIELDS.length * (metW + 8);
 
+        // 表头：指标名称（带彩色圆点），日期与总分间距小，维度列间距大
         html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:16px;font-size:${headSize}px;">`
           + `<span style="width:${dateW}px;color:#bbb;margin-right:4px;">日期</span>`
           + `<span style="width:${metW}px;text-align:right;white-space:nowrap;">`
@@ -1152,6 +1167,7 @@ function renderLineChart() {
           ).join("")
           + `</div>`;
 
+        // 每天一行，时间倒序：今日在前
         [...dayCols].reverse().forEach((col, rowIdx) => {
           const isToday = col.key === "today";
           if (rowIdx === 1) html += `<div style="height:1px;background:#f3e6ee;margin:3px 0;"></div>`;
@@ -1208,6 +1224,7 @@ function renderLineChart() {
 }
 
 function hourDiffArr(vals, dp = 2) {
+  // 增幅为每小时的增幅：与上一有效取值之差（非累计）
   const out = [];
   let prev = null;
   (vals || []).forEach((v, i) => {
@@ -1316,7 +1333,6 @@ function renderDeltaChart() {
         rotate: 45,
         formatter: function (value) { return value || ""; }
       },
-      axisLine: { lineStyle: { color: "#f0d
       axisLine: { lineStyle: { color: "#f0d6e4" } }
     },
     yAxis: {
@@ -1335,6 +1351,7 @@ function renderDeltaChart() {
   chartDelta.resize();
 }
 
+// 增幅图表共用 y 轴：最低 0、最大值自适应、固定等间距刻度；maxCap 可选上限（超出部分不展示）
 function deltaYAxis(arrs, maxCap) {
   let maxV = 0;
   arrs.forEach(arr => arr.forEach(v => {
@@ -1357,7 +1374,10 @@ function deltaYAxis(arrs, maxCap) {
   return { min: 0, max: yMax, interval: interval };
 }
 
+// 周榜增幅：数据取周榜（weekly.csv），每条曲线窗口为当天 00:26 → 次日 00:16，每小时取一个点；
+// 增幅为与上一小时点之差（非累计）
 function deltaWeekSeries() {
+  // 窗口起点(≥00:26)的行归属当天；≤00:16 的行为前一天窗口的收尾
   const groups = new Map(), closePool = new Map();
   for (const r of weeklyRows) {
     const dt = parseTime(r["时间"]);
@@ -1388,7 +1408,7 @@ function deltaWeekSeries() {
     const pool = closePool.get(addDay(k)) || [];
     let closePt = null;
     for (const { dt, r } of pool) {
-      if (!closePt || dt > closePt.dt) closePt = { dt, r };
+      if (!closePt || dt > closePt.dt) closePt = { dt, r }; // 取最晚一次（如 00:16）
     }
     if (closePt) pts.push({ dt: closePt.dt, r: closePt.r, closing: true });
     const hourly = [];
@@ -1488,7 +1508,6 @@ function renderDeltaWeekChart() {
     });
   }
 
-  // 总分上限修改为 0.1
   const yAxisCfg = deltaYAxis(series.curves.map(c => c.arr), deltaDimWeek === "综合得分" ? 0.1 : 1);
 
   chartDeltaWeek.setOption({
@@ -1551,7 +1570,7 @@ document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forE
     renderLineChart();
   });
 });
-
+let dimsTab = "综合得分";
 function renderDimsTable() {
   const theadRow = document.querySelector("#dims-table thead tr");
   const tbody = document.querySelector("#dims-table tbody");
@@ -1571,11 +1590,11 @@ function renderDimsTable() {
     days.push(dateKey(d));
   }
 
+  // 表头：日期/涨幅（涨幅用每日涨幅表里周榜的「最后一条 - 第一条」）
   const { map: perdayDeltaMap } = perDayDeltas();
   const headDelta = k => {
     const g = perdayDeltaMap.get(k);
-    // 表头当日总涨幅改用日榜
-    const v = g && g.daily ? g.daily[dimsTab] : null;
+const v = g && g.daily ? g.daily[dimsTab] : null;
     if (v === null || v === undefined || isNaN(v)) return "-";
     if (v < 0) return "-";
     if (v === 0) return "0.00";
@@ -1630,11 +1649,12 @@ function renderDimsTable() {
     });
     const cells = vals.map((v, i) => {
       if (!v) return `<td>-</td>`;
+      // 涨幅：与前一条（同日上一时间段）作差，06:06 用 -；当日涨幅最大者加粗高亮
       let dHtml = '<span style="color:#999;">-</span>';
       const d = dNums[i];
-      if (d !== null && d > 0) {
-        dHtml = `<span style="color:#fa8c16;">+${d.toFixed(2)}</span>`; // 取消橙色涨幅加粗
-      } else if (d === 0) {
+if (d !== null && d > 0) {
+  dHtml = `<span style="color:#fa8c16;">+${d.toFixed(2)}</span>`;
+} else if (d === 0) {
         dHtml = '<span style="color:#999;">0.00</span>';
       }
       prevNums[i] = v.num;
@@ -1713,122 +1733,6 @@ document.querySelectorAll(".export-btn").forEach(btn => {
       this.disabled = false;
     });
   });
-});
-
-// ================= 全量长图导出核心逻辑 =================
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-async function captureElement(el) {
-  return await html2canvas(el, {
-    backgroundColor: "#ffffff",
-    scale: 2,
-    useCORS: true,
-    logging: false
-  });
-}
-
-document.getElementById("exportAllBtn").addEventListener("click", async function() {
-  const btn = this;
-  const originalText = btn.textContent;
-  btn.textContent = "正在生成，请稍候...";
-  btn.disabled = true;
-
-  try {
-    const currentTableMode = tableMode;
-    const currentDimsTab = dimsTab;
-    const domList = [];
-    
-    const headerEl = document.querySelector('.headline-deltas');
-    const titleEl = document.querySelector('h1');
-    const timeEl = document.querySelector('.update-time');
-    
-    const headerWrap = document.createElement('div');
-    headerWrap.style.width = "1200px";
-    headerWrap.style.background = "#faf7f9";
-    headerWrap.style.padding = "20px";
-    headerWrap.style.textAlign = "center";
-    headerWrap.appendChild(titleEl.cloneNode(true));
-    headerWrap.appendChild(timeEl.cloneNode(true));
-    headerWrap.appendChild(headerEl.cloneNode(true));
-    
-    const leftTableCard = document.querySelectorAll('.table-card')[0];
-    const leftTitle = leftTableCard.querySelector('.title');
-    const leftOriginalTitle = leftTitle.textContent;
-    
-    tableMode = "official"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-官方CD · 最近 12 条";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-官方" });
-
-    tableMode = "hourly"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-每小时 · 最近 12 条";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每小时" });
-
-    tableMode = "perday"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-周榜 · 最近 7 天";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每日" });
-    
-    tableMode = currentTableMode; renderTable(); leftTitle.textContent = leftOriginalTitle;
-
-    const dimsTableCard = document.querySelectorAll('.table-card')[1];
-    domList.push({ canvas: await captureElement(dimsTableCard), label: "分项日榜" });
-
-    const chartCards = document.querySelectorAll('.chart-card');
-    for (let i = 0; i < chartCards.length; i++) {
-       const card = chartCards[i];
-       const chartDom = card.querySelector('.chart-wrapper-flex');
-       if (chartDom) {
-           const chartInstance = echarts.getInstanceByDom(chartDom);
-           if (chartInstance) chartInstance.resize();
-       }
-       await sleep(300);
-       domList.push({ canvas: await captureElement(card), label: "图表" + (i+1) });
-    }
-
-    const padding = 20;
-    const canvasWidth = 1240; 
-    let totalHeight = padding; 
-
-    for (const item of domList) {
-      totalHeight += item.canvas.height + padding;
-    }
-    const headerCanvas = await captureElement(headerWrap);
-    totalHeight += headerCanvas.height + padding;
-
-    const finalCanvas = document.createElement("canvas");
-    finalCanvas.width = canvasWidth;
-    finalCanvas.height = totalHeight;
-    const ctx = finalCanvas.getContext("2d");
-    
-    ctx.fillStyle = "#faf7f9";
-    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-
-    let currentY = padding;
-    
-    ctx.drawImage(headerCanvas, padding, currentY, headerCanvas.width, headerCanvas.height);
-    currentY += headerCanvas.height + padding;
-
-    for (const item of domList) {
-      const drawX = (canvasWidth - item.canvas.width) / 2;
-      ctx.drawImage(item.canvas, drawX, currentY, item.canvas.width, item.canvas.height);
-      currentY += item.canvas.height + padding;
-    }
-
-    const link = document.createElement("a");
-    link.download = `全量数据长图_${new Date().getMonth()+1}${new Date().getDate()}_${new Date().getHours()}${new Date().getMinutes()}.png`;
-    link.href = finalCanvas.toDataURL("image/png", 1.0);
-    link.click();
-
-  } catch (err) {
-    console.error(err);
-    alert("生成失败，请检查控制台报错");
-  } finally {
-    btn.textContent = originalText;
-    btn.disabled = false;
-    document.querySelectorAll('#modeTabs .mode-btn').forEach(b => {
-        if (b.dataset.mode === tableMode) b.classList.add("active"); else b.classList.remove("active");
-    });
-    renderTable();
-  }
 });
 
 async function load() {
