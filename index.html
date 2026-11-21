@@ -1768,9 +1768,14 @@ async function exportFullPage() {
   });
 
   // 等待图表重新自适应大小
-  if (window.chartLine) window.chartLine.resize();
-  if (window.chartDelta) window.chartDelta.resize();
-  if (window.chartDeltaWeek) window.chartDeltaWeek.resize();
+  const chartIds = ["chartLine", "chartDelta", "chartDeltaWeek"];
+  chartIds.forEach(id => {
+    const dom = document.getElementById(id);
+    if (dom) {
+      const instance = echarts.getInstanceByDom(dom);
+      if (instance) instance.resize();
+    }
+  });
   await new Promise(r => setTimeout(r, 600));
 
   // 4. 执行截图
@@ -1819,11 +1824,13 @@ async function exportFullPage() {
     });
     
     // 恢复图表大小
-    if (window.chartLine) window.chartLine.resize();
-    if (window.chartDelta) window.chartDelta.resize();
-    if (window.chartDeltaWeek) window.chartDeltaWeek.resize();
-  }
-}
+    chartIds.forEach(id => {
+      const dom = document.getElementById(id);
+      if (dom) {
+        const instance = echarts.getInstanceByDom(dom);
+        if (instance) instance.resize();
+      }
+    });
 async function load() {
   const [d, w, wb, h] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
