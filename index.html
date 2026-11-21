@@ -278,6 +278,9 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <div class="container">
   <h1>阴天也会有烦恼吗</h1>
   <div class="update-time" id="update-time">加载中…</div>
+<div style="text-align:center; margin-bottom: 10px;">
+  <button onclick="exportFullPage()" style="background:#ea3690; color:#fff; border:none; padding: 6px 16px; border-radius: 20px; cursor:pointer; font-weight:bold;">📸 生成全景长图</button>
+</div>
   <div class="headline-deltas" id="headlineDeltas"></div>
 
   <div class="page-grid">
@@ -1734,7 +1737,93 @@ document.querySelectorAll(".export-btn").forEach(btn => {
     });
   });
 });
+// ====== 全景长图导出功能 ======
+async function exportFullPage() {
+  // 1. 找到所有的交互按钮
+  const tabButtons = document.querySelectorAll('.range-btn, .mode-btn');
+  const originalActiveStates = [];
+  
+  // 保存原始状态
+  tabButtons.forEach(btn => {
+    originalActiveStates.push({ btn, isActive: btn.classList.contains('active') });
+  });
 
+  // 2. 依次激活所有 Tab
+  for (const btn of tabButtons) {
+    if (!btn.classList.contains('active')) {
+      btn.click();
+      // 等待 ECharts 和 DOM 渲染完成
+      await new Promise(r => setTimeout(r, 400)); 
+    }
+  }
+
+  // 3. 暂时解除图表和表格的高度限制
+  const elementsToExpand = document.querySelectorAll('.chart-card, .tables-row .table-card');
+  const originalStyles = [];
+  
+  elementsToExpand.forEach(el => {
+    originalStyles.push({ el, height: el.style.height, maxHeight: el.style.maxHeight });
+    el.style.height = 'auto';       // 图表容器撑开
+    el.style.maxHeight = 'none';    // 取消表格的最大高度限制
+  });
+
+  // 等待图表重新自适应大小
+  if (window.chartLine) window.chartLine.resize();
+  if (window.chartDelta) window.chartDelta.resize();
+  if (window.chartDeltaWeek) window.chartDeltaWeek.resize();
+  await new Promise(r => setTimeout(r, 600));
+
+  // 4. 执行截图
+  const container = document.querySelector('.container');
+  
+  // 隐藏水印，避免截图重叠（可选）
+  const watermark = document.getElementById('global-watermark');
+  if (watermark) watermark.style.display = 'none';
+
+  try {
+    const canvas = await html2canvas(container, {
+      backgroundColor: "#faf7f9",
+      scale: 2, // 保证高清
+      useCORS: true,
+      allowTaint: true,
+      windowWidth: container.scrollWidth,
+      windowHeight: container.scrollHeight
+    });
+
+    // 下载图片
+    const a = document.createElement('a');
+    const now = new Date();
+    const p = n => String(n).padStart(2, '0');
+    a.download = `全景数据图_${now.getMonth() + 1}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  } catch (err) {
+    console.error("长图生成失败", err);
+    alert("长图生成失败，请检查控制台报错");
+  } finally {
+    // 5. 恢复原始状态和样式
+    if (watermark) watermark.style.display = '';
+    
+    elementsToExpand.forEach((el, idx) => {
+      el.style.height = originalStyles[idx].height;
+      el.style.maxHeight = originalStyles[idx].maxHeight;
+    });
+
+    // 恢复原本激活的 Tab
+    originalActiveStates.forEach(({ btn, isActive }) => {
+      if (isActive && !btn.classList.contains('active')) {
+        btn.click();
+      } else if (!isActive && btn.classList.contains('active')) {
+        btn.click();
+      }
+    });
+    
+    // 恢复图表大小
+    if (window.chartLine) window.chartLine.resize();
+    if (window.chartDelta) window.chartDelta.resize();
+    if (window.chartDeltaWeek) window.chartDeltaWeek.resize();
+  }
+}
 async function load() {
   const [d, w, wb, h] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
