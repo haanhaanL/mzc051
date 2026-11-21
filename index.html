@@ -278,6 +278,11 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <div class="container">
   <h1>阴天也会有烦恼吗</h1>
   <div class="update-time" id="update-time">加载中…</div>
+<div style="text-align: center; margin: 10px 0 15px 0;">
+  <button id="exportAllBtn" style="background: #ea3690; color: white; font-weight: bold; padding: 6px 20px; border-radius: 20px; border: none; cursor: pointer; font-size: 14px; box-shadow: 0 2px 6px rgba(234,54,144,0.3);">
+    生成全量长图
+  </button>
+</div>
   <div class="headline-deltas" id="headlineDeltas"></div>
 
   <div class="page-grid">
@@ -1734,7 +1739,157 @@ document.querySelectorAll(".export-btn").forEach(btn => {
     });
   });
 });
+// ================= 全量长图导出核心逻辑 =================
 
+// 辅助函数：等待一段时间（让 ECharts 完成渲染动画）
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// 辅助函数：将单个 DOM 元素转换为 canvas
+async function captureElement(el) {
+  return await html2canvas(el, {
+    backgroundColor: "#ffffff",
+    scale: 2, // 2倍高清
+    useCORS: true,
+    logging: false
+  });
+}
+
+// 点击事件绑定
+document.getElementById("exportAllBtn").addEventListener("click", async function() {
+  const btn = this;
+  const originalText = btn.textContent;
+  btn.textContent = "正在生成，请稍候...";
+  btn.disabled = true;
+  btn.style.background = "#ccc";
+
+  try {
+    // 1. 备份当前网页的状态
+    const currentTableMode = tableMode;
+    const currentDimsTab = dimsTab;
+    const currentLineTab = lineTab;
+    const currentDeltaDim = deltaDim;
+    const currentDeltaDimWeek = deltaDimWeek;
+
+    // 我们需要截取的元素列表
+    const domList = [];
+    
+    // 截取顶部信息（标题、更新时间、右上角涨幅框）
+    const headerEl = document.querySelector('.headline-deltas');
+    const titleEl = document.querySelector('h1');
+    const timeEl = document.querySelector('.update-time');
+    
+    // 临时创建一个头部包裹，方便一起截图
+    const headerWrap = document.createElement('div');
+    headerWrap.style.width = "1200px"; // 固定宽度防止挤压
+    headerWrap.style.background = "#faf7f9";
+    headerWrap.style.padding = "20px";
+    headerWrap.style.textAlign = "center";
+    headerWrap.appendChild(titleEl.cloneNode(true));
+    headerWrap.appendChild(timeEl.cloneNode(true));
+    headerWrap.appendChild(headerEl.cloneNode(true));
+    
+    // 先把左上角表格的不同模式全截下来
+    const leftTableCard = document.querySelectorAll('.table-card')[0];
+    const leftTitle = leftTableCard.querySelector('.title');
+    const leftOriginalTitle = leftTitle.textContent;
+    
+    // 截图：官方
+    tableMode = "official"; renderTable(); await sleep(100);
+    leftTitle.textContent = "由你榜-官方CD · 最近 12 条";
+    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-官方" });
+
+    // 截图：每小时
+    tableMode = "hourly"; renderTable(); await sleep(100);
+    leftTitle.textContent = "由你榜-每小时 · 最近 12 条";
+    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每小时" });
+
+    // 截图：每日
+    tableMode = "perday"; renderTable(); await sleep(100);
+    leftTitle.textContent = "由你榜-周榜 · 最近 7 天";
+    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每日" });
+    
+    // 恢复左边的表格
+    tableMode = currentTableMode; renderTable(); leftTitle.textContent = leftOriginalTitle;
+
+    // 抓取右下角分项日榜表格
+    const dimsTableCard = document.querySelectorAll('.table-card')[1];
+    domList.push({ canvas: await captureElement(dimsTableCard), label: "分项日榜" });
+
+    // 抓取三个图表 (需要把内部宽高锁死防止 canvas 绘制空白)
+    const chartCards = document.querySelectorAll('.chart-card');
+    for (let i = 0; i < chartCards.length; i++) {
+       const card = chartCards[i];
+       // 图表有时候在非激活状态下截图会白屏，强制触发一次 resize
+       const chartDom = card.querySelector('.chart-wrapper-flex');
+       if (chartDom) {
+           const chartInstance = echarts.getInstanceByDom(chartDom);
+           if (chartInstance) chartInstance.resize();
+       }
+       await sleep(300); // 等动画结束
+       domList.push({ canvas: await captureElement(card), label: "图表" + (i+1) });
+    }
+
+    // ===== 开始拼接长图 =====
+    const padding = 20;
+    // 整体宽度固定 1240 (包含左右各20边距)
+    const canvasWidth = 1240; 
+    let totalHeight = padding; 
+
+    // 计算总高度
+    for (const item of domList) {
+      totalHeight += item.canvas.height + padding;
+    }
+    // 加上头部的高度
+    const headerCanvas = await captureElement(headerWrap);
+    totalHeight += headerCanvas.height + padding;
+
+    // 创建最终的大画布
+    const finalCanvas = document.createElement("canvas");
+    finalCanvas.width = canvasWidth;
+    finalCanvas.height = totalHeight;
+    const ctx = finalCanvas.getContext("2d");
+    
+    // 填充背景色
+    ctx.fillStyle = "#faf7f9";
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+    // 开始向画布贴图
+    let currentY = padding;
+    
+    // 贴头部
+    ctx.drawImage(headerCanvas, padding, currentY, headerCanvas.width, headerCanvas.height);
+    currentY += headerCanvas.height + padding;
+
+    // 贴所有组件
+    for (const item of domList) {
+      // 居中绘制
+      const drawX = (canvasWidth - item.canvas.width) / 2;
+      ctx.drawImage(item.canvas, drawX, currentY, item.canvas.width, item.canvas.height);
+      currentY += item.canvas.height + padding;
+    }
+
+    // 触发下载
+    const link = document.createElement("a");
+    link.download = `全量数据长图_${new Date().getMonth()+1}${new Date().getDate()}_${new Date().getHours()}${new Date().getMinutes()}.png`;
+    link.href = finalCanvas.toDataURL("image/png", 1.0);
+    link.click();
+
+  } catch (err) {
+    console.error(err);
+    alert("生成失败，请检查控制台报错");
+  } finally {
+    // 恢复按钮状态
+    btn.textContent = originalText;
+    btn.disabled = false;
+    btn.style.background = "#ea3690";
+    
+    // 恢复 UI 状态（防止卡死在某个模式）
+    document.querySelectorAll('#modeTabs .mode-btn').forEach(b => {
+        if (b.dataset.mode === tableMode) b.classList.add("active"); else b.classList.remove("active");
+    });
+    renderTable();
+  }
+});
 async function load() {
   const [d, w, wb, h] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
