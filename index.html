@@ -278,9 +278,6 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 <div class="container">
   <h1>阴天也会有烦恼吗</h1>
   <div class="update-time" id="update-time">加载中…</div>
-<div style="text-align:center; margin-bottom: 10px;">
-  <button onclick="exportFullPage()" style="background:#ea3690; color:#fff; border:none; padding: 6px 16px; border-radius: 20px; cursor:pointer; font-weight:bold;">📸 生成全景长图</button>
-</div>
   <div class="headline-deltas" id="headlineDeltas"></div>
 
   <div class="page-grid">
@@ -1737,89 +1734,8 @@ document.querySelectorAll(".export-btn").forEach(btn => {
     });
   });
 });
-// ====== 全景长图导出功能 ======
-async function exportFullPage() {
-  const tabButtons = document.querySelectorAll('.range-btn, .mode-btn');
-  const originalActiveStates = [];
-  
-  tabButtons.forEach(btn => {
-    originalActiveStates.push({ btn, isActive: btn.classList.contains('active') });
-  });
 
-  for (const btn of tabButtons) {
-    if (!btn.classList.contains('active')) {
-      btn.click();
-      await new Promise(r => setTimeout(r, 400)); 
-    }
-  }
-
-  const elementsToExpand = document.querySelectorAll('.chart-card, .tables-row .table-card');
-  const originalStyles = [];
-  
-  elementsToExpand.forEach(el => {
-    originalStyles.push({ el, height: el.style.height, maxHeight: el.style.maxHeight });
-    el.style.height = 'auto';
-    el.style.maxHeight = 'none';
-  });
-
-  // ✅ 使用 ECharts 实例方法获取并 resize
-  const chartIds = ["chartLine", "chartDelta", "chartDeltaWeek"];
-  chartIds.forEach(id => {
-    const dom = document.getElementById(id);
-    if (dom && window.echarts) {
-      const instance = echarts.getInstanceByDom(dom);
-      if (instance) instance.resize();
-    }
-  });
-
-  await new Promise(r => setTimeout(r, 600));
-
-  const container = document.querySelector('.container');
-  const watermark = document.getElementById('global-watermark');
-  if (watermark) watermark.style.display = 'none';
-
-  try {
-    const canvas = await html2canvas(container, {
-      backgroundColor: "#faf7f9",
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      windowWidth: container.scrollWidth,
-      windowHeight: container.scrollHeight
-    });
-
-    const a = document.createElement('a');
-    const now = new Date();
-    const p = n => String(n).padStart(2, '0');
-    a.download = `全景数据图_${now.getMonth() + 1}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.png`;
-    a.href = canvas.toDataURL("image/png");
-    a.click();
-  } catch (err) {
-    console.error("长图生成失败", err);
-    alert("长图生成失败，请检查控制台报错");
-  } finally {
-    if (watermark) watermark.style.display = '';
-    
-    elementsToExpand.forEach((el, idx) => {
-      el.style.height = originalStyles[idx].height;
-      el.style.maxHeight = originalStyles[idx].maxHeight;
-    });
-
-    originalActiveStates.forEach(({ btn, isActive }) => {
-      if (isActive && !btn.classList.contains('active')) btn.click();
-      else if (!isActive && btn.classList.contains('active')) btn.click();
-    });
-    
-    // 恢复图表大小
-    chartIds.forEach(id => {
-      const dom = document.getElementById(id);
-      if (dom && window.echarts) {
-        const instance = echarts.getInstanceByDom(dom);
-        if (instance) instance.resize();
-      }
-    });
-  }
-}async function load() {
+async function load() {
   const [d, w, wb, h] = await Promise.all([
     fetch(DAILY_CSV).then(r => r.text()).catch(() => ""),
     fetch(WEEKLY_CSV).then(r => r.text()).catch(() => ""),
