@@ -1763,85 +1763,79 @@ document.getElementById("exportAllBtn").addEventListener("click", async function
   btn.style.background = "#ccc";
 
   try {
-    // 1. 备份当前网页的状态
     const currentTableMode = tableMode;
     const currentDimsTab = dimsTab;
     const currentLineTab = lineTab;
     const currentDeltaDim = deltaDim;
     const currentDeltaDimWeek = deltaDimWeek;
 
-    // 我们需要截取的元素列表
+    // 1. 收集需要截图的 DOM 元素
     const domList = [];
     
-    // 截取顶部信息（标题、更新时间、右上角涨幅框）
-    const headerEl = document.querySelector('.headline-deltas');
+    // 头部信息（我们临时用原生的 document.createElement 拼一个干净的头部，避免 cloneNode 报错）
     const titleEl = document.querySelector('h1');
     const timeEl = document.querySelector('.update-time');
-    
-    // 临时创建一个头部包裹，方便一起截图
-    const headerWrap = document.createElement('div');
-    headerWrap.style.width = "1200px"; // 固定宽度防止挤压
-    headerWrap.style.background = "#faf7f9";
-    headerWrap.style.padding = "20px";
-    headerWrap.style.textAlign = "center";
-    headerWrap.appendChild(titleEl.cloneNode(true));
-    headerWrap.appendChild(timeEl.cloneNode(true));
-    headerWrap.appendChild(headerEl.cloneNode(true));
-    
-    // 先把左上角表格的不同模式全截下来
+    const headerEl = document.querySelector('.headline-deltas');
+
+    domList.push(titleEl);
+    domList.push(timeEl);
+    domList.push(headerEl);
+
+    // 2. 切换左侧表格模式并收集 DOM（不用克隆，直接截取实际元素）
     const leftTableCard = document.querySelectorAll('.table-card')[0];
-    const leftTitle = leftTableCard.querySelector('.title');
-    const leftOriginalTitle = leftTitle.textContent;
     
-    // 截图：官方
-    tableMode = "official"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-官方CD · 最近 12 条";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-官方" });
+    tableMode = "official"; renderTable(); await sleep(150);
+    domList.push(leftTableCard);
 
-    // 截图：每小时
-    tableMode = "hourly"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-每小时 · 最近 12 条";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每小时" });
+    tableMode = "hourly"; renderTable(); await sleep(150);
+    domList.push(leftTableCard);
 
-    // 截图：每日
-    tableMode = "perday"; renderTable(); await sleep(100);
-    leftTitle.textContent = "由你榜-周榜 · 最近 7 天";
-    domList.push({ canvas: await captureElement(leftTableCard), label: "表格-每日" });
+    tableMode = "perday"; renderTable(); await sleep(150);
+    domList.push(leftTableCard);
     
-    // 恢复左边的表格
-    tableMode = currentTableMode; renderTable(); leftTitle.textContent = leftOriginalTitle;
+    tableMode = currentTableMode; renderTable();
 
-    // 抓取右下角分项日榜表格
+    // 3. 收集右侧分项日榜表格
     const dimsTableCard = document.querySelectorAll('.table-card')[1];
-    domList.push({ canvas: await captureElement(dimsTableCard), label: "分项日榜" });
+    domList.push(dimsTableCard);
 
-    // 抓取三个图表 (需要把内部宽高锁死防止 canvas 绘制空白)
+    // 4. 收集三个图表
     const chartCards = document.querySelectorAll('.chart-card');
     for (let i = 0; i < chartCards.length; i++) {
        const card = chartCards[i];
-       // 图表有时候在非激活状态下截图会白屏，强制触发一次 resize
        const chartDom = card.querySelector('.chart-wrapper-flex');
        if (chartDom) {
            const chartInstance = echarts.getInstanceByDom(chartDom);
            if (chartInstance) chartInstance.resize();
        }
-       await sleep(300); // 等动画结束
-       domList.push({ canvas: await captureElement(card), label: "图表" + (i+1) });
+       await sleep(150);
+       domList.push(card);
     }
 
-    // ===== 开始拼接长图 =====
+    // ===== 开始截取并拼接 =====
     const padding = 20;
-    // 整体宽度固定 1240 (包含左右各20边距)
     const canvasWidth = 1240; 
     let totalHeight = padding; 
 
-    // 计算总高度
-    for (const item of domList) {
-      totalHeight += item.canvas.height + padding;
+    // 用一个数组暂存截好的 canvas 画板
+    const canvases = [];
+    for (const el of domList) {
+      // 针对图表或其他元素，加一个保护机制：如果 element 是隐藏的就跳过
+      if (!el || el.offsetWidth === 0 || el.offsetHeight === 0) continue;
+      
+      const canvas = await html2canvas(el, {
+        backgroundColor: "#faf7f9",
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        // 指定外边距，防止截出来贴边
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight
+      });
+      canvases.push(canvas);
+      totalHeight += canvas.height + padding;
     }
-    // 加上头部的高度
-    const headerCanvas = await captureElement(headerWrap);
-    totalHeight += headerCanvas.height + padding;
 
     // 创建最终的大画布
     const finalCanvas = document.createElement("canvas");
@@ -1853,19 +1847,12 @@ document.getElementById("exportAllBtn").addEventListener("click", async function
     ctx.fillStyle = "#faf7f9";
     ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-    // 开始向画布贴图
     let currentY = padding;
-    
-    // 贴头部
-    ctx.drawImage(headerCanvas, padding, currentY, headerCanvas.width, headerCanvas.height);
-    currentY += headerCanvas.height + padding;
-
-    // 贴所有组件
-    for (const item of domList) {
-      // 居中绘制
-      const drawX = (canvasWidth - item.canvas.width) / 2;
-      ctx.drawImage(item.canvas, drawX, currentY, item.canvas.width, item.canvas.height);
-      currentY += item.canvas.height + padding;
+    for (const canvas of canvases) {
+      // 为了让长图两边留白对称，强制居中绘制
+      const drawX = (canvasWidth - canvas.width) / 2;
+      ctx.drawImage(canvas, drawX, currentY, canvas.width, canvas.height);
+      currentY += canvas.height + padding;
     }
 
     // 触发下载
@@ -1875,18 +1862,12 @@ document.getElementById("exportAllBtn").addEventListener("click", async function
     link.click();
 
   } catch (err) {
-    console.error(err);
-    alert("生成失败，请检查控制台报错");
+    console.error("截图过程报错:", err);
+    alert("生成失败，请按 F12 查看控制台具体报错");
   } finally {
-    // 恢复按钮状态
     btn.textContent = originalText;
     btn.disabled = false;
     btn.style.background = "#ea3690";
-    
-    // 恢复 UI 状态（防止卡死在某个模式）
-    document.querySelectorAll('#modeTabs .mode-btn').forEach(b => {
-        if (b.dataset.mode === tableMode) b.classList.add("active"); else b.classList.remove("active");
-    });
     renderTable();
   }
 });
