@@ -105,7 +105,11 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     cursor: pointer; outline: none; white-space: nowrap;
 }
 .table-card .title-row .mode-ddl-btn:hover { background-color: #fde7f1; }
-.table-card .title-row .mode-ddl.open .mode-ddl-btn { background-color: #ea3690; color: #fff; border-color: #ea3690; }
+.table-card .title-row .mode-ddl-btn.active,
+.table-card .title-row .mode-ddl.open .mode-ddl-btn {
+    background-color: #ea3690; color: #fff; border-color: #ea3690;
+}
+.table-card .title-row .mode-ddl-btn.active .mode-ddl-arrow,
 .table-card .title-row .mode-ddl.open .mode-ddl-arrow { border-top-color: #fff; }
 .mode-ddl-arrow {
     display: inline-block; width: 0; height: 0;
@@ -121,11 +125,8 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     box-shadow: 0 4px 12px rgba(234,54,144,0.18);
     flex-direction: column; gap: 2px; width: max-content;
 }
-.mode-ddl-opt {
-    padding: 3px 10px; border-radius: 999px; font-size: 11px; line-height: 16px;
-    color: #ea3690; cursor: pointer; white-space: nowrap; text-align: center;
-}
-.mode-ddl-opt:hover { background: #fde7f1; }
+.mode-ddl-opt { padding: 3px 10px; border-radius: 999px; font-size: 11px; line-height: 16px; color: #ea3690; background: #fff; cursor: pointer; white-space: nowrap; text-align: center; }
+.mode-ddl-opt:hover { color: #b0257b; }
 .mode-ddl-opt.selected { background: #ea3690; color: #fff; font-weight: bold; }
 
 .export-btn {
@@ -994,6 +995,13 @@ function buildWeeklyCurve(monday) {
   return { labels, axisLabels, data, list };
 }
 
+function weekRangeLabel(monday) {
+  const d0 = new Date(monday);
+  const d1 = new Date(monday);
+  d1.setDate(d1.getDate() + 6);
+  return `${shortDate(dateKey(d0))}-${shortDate(dateKey(d1))}`;
+}
+
 function weeklySeries() {
   // 周榜总分取「综合得分原值」列
   const now = new Date();
@@ -1012,6 +1020,8 @@ function weeklySeries() {
     data: cur.data,
     prevWeek: prev.data,
     lastWeekKey: dateKey(lastMonday),
+    curWeekLabel: weekRangeLabel(monday),
+    lastWeekLabel: weekRangeLabel(lastMonday),
     last: cur.list.length ? cur.list[cur.list.length - 1] : null
   };
 }
@@ -1066,7 +1076,7 @@ function renderLineChart() {
   } else {
     // 上周：颜色参考日榜「昨日」的浅色系列
     const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
-    const lwLabel = series.lastWeekKey ? shortDate(series.lastWeekKey) : "上周";
+    const lwLabel = series.lastWeekLabel || "上周";
     legendEl.innerHTML =
       LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("")
       + "　" + `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${lwLabel}</span>`;
@@ -1174,42 +1184,14 @@ function renderLineChart() {
         const label = series.labels[i];
         let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
 
-        if (lineTab !== "daily") {
-          // 周榜：保持原逻辑（按值排序），上周系列用上周数据自身计算涨幅
-          const sorted = params.filter(p => p.value !== null && p.value !== undefined).sort((a, b) => b.value - a.value);
-          if (!sorted.length) {
-            html += `<div style="color:#999;">无数据</div>`;
-            return html;
-          }
-          const isLastWeek = n => n.endsWith("（上周）");
-          const baseLabel = n => n.replace("（上周）", "");
-          sorted.forEach(p => {
-            const field = LINE_FIELDS.find(f => f.label === baseLabel(p.seriesName));
-            const arr = !field ? null
-              : (isLastWeek(p.seriesName) ? series.prevWeek[field.key] : series.data[field.key]);
-            const d = field ? arrDelta(arr, i) : null;
-            let deltaText = "-", deltaColor = "#999";
-            if (d !== null && !isNaN(d)) {
-              deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
-              deltaColor = d > 0 ? "#ea3690" : "#999";
-            }
-            html += `<div style="display:flex;align-items:center;gap:12px;min-width:230px;line-height:20px;">`
-              + `<span style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">`
-              + `<span>${p.marker}</span>`
-              + `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.seriesName}</span>`
-              + `<span style="margin-left:auto;font-weight:bold;color:#333;">${p.value}</span>`
-              + `</span>`
-              + `<span style="width:60px;text-align:right;white-space:nowrap;font-weight:bold;color:${deltaColor};">${deltaText}</span>`
-              + `</div>`;
-          });
-          return html;
-        }
-
-        // 日榜：固定顺序，各历史日 / 今日各自“值 / 涨幅”
-        const dayCols = series.prevDays.map(d =>
-          ({ key: d.key, label: shortDate(d.key), arr: d.data })
-        );
-        dayCols.push({ key: "today", label: "今日", arr: series.data });
+        // 统一布局：日榜=各历史日/今日，周榜=上周/本周（日期区间标签），每行“值 / 涨幅”
+        const dayCols = lineTab === "daily"
+          ? series.prevDays.map(d => ({ label: shortDate(d.key), arr: d.data, isCur: false }))
+          : [
+              { label: series.lastWeekLabel, arr: series.prevWeek, isCur: false },
+              { label: series.curWeekLabel, arr: series.data, isCur: true }
+            ];
+        if (lineTab === "daily") dayCols.push({ label: "今日", arr: series.data, isCur: true });
 
         const deltaFor = (arr, idx) => {
           const cur = arr[idx];
@@ -1229,7 +1211,7 @@ function renderLineChart() {
         };
 
         const compact = window.innerWidth < 900;
-        const dateW = compact ? 40 : 52;
+        const dateW = lineTab === "daily" ? (compact ? 40 : 52) : (compact ? 62 : 78);
         const metW = compact ? 64 : 92;
         const gapW = compact ? 5 : 14;
         const fontSize = compact ? 10 : 12;
@@ -1252,7 +1234,7 @@ function renderLineChart() {
 
         // 每天一行，时间倒序：今日在前
         [...dayCols].reverse().forEach((col, rowIdx) => {
-          const isToday = col.key === "today";
+          const isToday = col.isCur;
           if (rowIdx === 1) html += `<div style="height:1px;background:#f3e6ee;margin:3px 0;"></div>`;
           const cells = LINE_FIELDS.map((f, ci) => {
             const arr = col.arr[f.key];
@@ -1270,7 +1252,7 @@ function renderLineChart() {
           }).join("");
           html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:17px;">`
             + `<span style="width:${dateW}px;margin-right:4px;color:${isToday ? "#ea3690" : "#888"};font-weight:${isToday ? "bold" : "normal"};font-size:${headSize}px;">`
-            + `${isToday ? "今日" : col.label}</span>`
+            + `${col.label}</span>`
             + cells
             + `</div>`;
         });
@@ -1656,8 +1638,6 @@ document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forE
 let dimsTab = "综合得分";
 let dimsWeekOffset = 0;
 function renderDimsTable() {
-  const titleEl = document.getElementById("dimsTableTitle");
-  if (titleEl) titleEl.textContent = `由你榜分项 · 日榜${dimsWeekOffset === 0 ? "" : "（上周）"}`;
   const theadRow = document.querySelector("#dims-table thead tr");
   const tbody = document.querySelector("#dims-table tbody");
   if (!theadRow || !tbody) return;
@@ -1768,8 +1748,13 @@ function setupDdl(id, onChange) {
   if (!ddl) return;
   const btn = ddl.querySelector(".mode-ddl-btn");
   const list = ddl.querySelector(".mode-ddl-list");
+  const defaultValue = ddl.dataset.value;
   ddl._list = list;
   list.style.display = "none";
+  ddl._refreshActive = function () {
+    btn.classList.toggle("active", ddl.dataset.value !== defaultValue);
+  };
+  ddl._refreshActive();
   if (btn) btn.addEventListener("click", function (e) {
     e.stopPropagation();
     const wasOpen = ddl.classList.contains("open");
@@ -1793,11 +1778,12 @@ function setupDdl(id, onChange) {
   ddl.querySelectorAll(".mode-ddl-opt").forEach(opt => {
     opt.addEventListener("click", function (e) {
       e.stopPropagation();
-      ddl.querySelectorAll(".mode-ddl-opt").forEach(o => o.classList.remove("selected"));
+      list.querySelectorAll(".mode-ddl-opt").forEach(o => o.classList.remove("selected"));
       this.classList.add("selected");
       ddl.dataset.value = this.dataset.value;
       const label = ddl.querySelector(".mode-ddl-text");
       if (label) label.textContent = this.textContent;
+      ddl._refreshActive();
       ddl.classList.remove("open");
       list.style.display = "none";
       onChange(this.dataset.value);
