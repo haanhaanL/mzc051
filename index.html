@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>mzc051-阴天也会有烦恼吗</title>
+<title>mzc051</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <link rel="icon" href="data:,">
@@ -614,19 +614,10 @@ function renderHeadlineDeltas() {
       + `</div>`;
   };
 
-  const targetLine = `<div class="delta-line target-line">`
-    + `<span class="delta-target-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">今日日榜目标</span>`
-    + DIMS.map(d =>
-        `<span class="delta-dim target-val">${d === "播放热度" ? 90 : d === "畅销度" ? 85 : 96}</span>`
-      ).join("")
-    + `</div>`;
+  // 今日目标/每小时涨幅需求已屏蔽，暂不渲染
+  const targetLine = "";
 
-  const needLine = `<div class="delta-line need-line">`
-    + `<span class="delta-need-label" style="grid-column: 1 / 4; text-align:right; padding-right:8px;">每小时涨幅需求</span>`
-    + DIMS.map(d =>
-        `<span class="delta-dim need-val">${dailyTargetNeed[d] === "-" ? "-" : dailyTargetNeed[d]}</span>`
-      ).join("")
-    + `</div>`;
+  const needLine = "";
 
   el.innerHTML =
     `<div class="delta-box">`
@@ -638,7 +629,6 @@ function renderHeadlineDeltas() {
     + `</div>`
     + buildLine("日榜", dailyDelta, dailyDimDeltas, "daily")
     + buildLine("周榜", weeklyDelta, weeklyDimDeltas, "weekly")
-    + `<div class="delta-sep"></div>`
     + targetLine
     + needLine
     + `</div>`;
