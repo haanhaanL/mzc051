@@ -105,6 +105,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 }
 .export-btn:disabled { color: #bbb; border-color: #ddd; cursor: default; }
 .table-card .title-row .mode-tabs { right: 12px; }
+.table-card .title-row .mode-tabs .mode-tabs { position: static; transform: none; right: auto; top: auto; }
 .chart-card { position: relative; }
 .chart-title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .chart-title-row .export-btn {
@@ -261,6 +262,7 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
     .table-card .title-row { justify-content: flex-start; }
     .table-card .title-row .title { text-align: left; }
     .table-card .title-row .mode-tabs { position: static; transform: none; margin-left: auto; }
+    .table-card .title-row .mode-tabs .mode-tabs { margin-left: 0; }
 }
 
 #global-watermark {
@@ -317,12 +319,18 @@ h1 { text-align: center; color: #ea3690; font-size: 18px; margin: 10px 0; }
 
       <div class="card table-card">
         <div class="title-row">
-          <div class="title">由你榜分项 · 日榜</div>
-          <div class="mode-tabs" id="dimsTabs">
-            <button class="mode-btn active" data-dim="综合得分">总分</button>
-            <button class="mode-btn" data-dim="播放热度">播放热度</button>
-            <button class="mode-btn" data-dim="畅销度">畅销度</button>
-            <button class="mode-btn" data-dim="推荐度">推荐度</button>
+          <div class="title" id="dimsTableTitle">由你榜分项 · 日榜</div>
+          <div class="mode-tabs">
+            <div class="mode-tabs" id="dimsWeekTabs">
+              <button class="mode-btn active" data-week="0">本周</button>
+              <button class="mode-btn" data-week="-1">上周</button>
+            </div>
+            <div class="mode-tabs" id="dimsTabs">
+              <button class="mode-btn active" data-dim="综合得分">总分</button>
+              <button class="mode-btn" data-dim="播放热度">播放热度</button>
+              <button class="mode-btn" data-dim="畅销度">畅销度</button>
+              <button class="mode-btn" data-dim="推荐度">推荐度</button>
+            </div>
           </div>
         </div>
         <div class="table-scroll-box">
@@ -670,7 +678,7 @@ function perDayDeltas() {
     }
   }
 
-  const keys = [...out.keys()].sort().reverse().slice(0, 7);
+  const keys = [...out.keys()].sort().reverse().slice(0, 14);
   return { keys, map: out };
 }
 
@@ -684,7 +692,7 @@ function renderTable() {
   if (titleEl) {
     titleEl.textContent = tableMode === "hourly"
       ? "由你榜-每小时 · 最近 12 条"
-      : (tableMode === "perday" ? "由你榜-周榜 · 最近 7 天" : "由你榜-官方CD · 最近 12 条");
+      : (tableMode === "perday" ? "由你榜-周榜 · 最近 14 天" : "由你榜-官方CD · 最近 12 条");
   }
 
   if (tableMode === "perday") {
@@ -915,21 +923,13 @@ function dailySeries() {
   };
 }
 
-function weeklySeries() {
-  const now = new Date();
-  const weekKey = businessWeek(now);
-  // 周榜总分取「综合得分原值」列
+function buildWeeklyCurve(monday) {
   const list = weeklyRows
     .map(r => ({ dt: parseTime(r["时间"]), r }))
-    .filter(x => x.dt && businessWeek(x.dt) === weekKey)
+    .filter(x => x.dt && x.dt >= monday && x.dt < new Date(monday.getTime() + 7 * 86400000))
     .sort((a, b) => a.dt - b.dt);
   const data = { "综合得分": [], "播放热度": [], "畅销度": [], "推荐度": [] };
   const labels = [], axisLabels = [];
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
   const pickHours = [0, 4, 8, 12, 16, 20];
   const byDayHour = new Map();
   for (const { dt, r } of list) {
@@ -957,8 +957,29 @@ function weeklySeries() {
       );
     }
   }
-  const lastItem = list.length ? list[list.length - 1] : null;
-  return { labels, axisLabels, data, last: lastItem };
+  return { labels, axisLabels, data, list };
+}
+
+function weeklySeries() {
+  // 周榜总分取「综合得分原值」列
+  const now = new Date();
+  const monday = new Date(now);
+  const day = monday.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  monday.setDate(monday.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  const cur = buildWeeklyCurve(monday);
+  const lastMonday = new Date(monday);
+  lastMonday.setDate(lastMonday.getDate() - 7);
+  const prev = buildWeeklyCurve(lastMonday);
+  return {
+    labels: cur.labels,
+    axisLabels: cur.axisLabels,
+    data: cur.data,
+    prevWeek: prev.data,
+    lastWeekKey: dateKey(lastMonday),
+    last: cur.list.length ? cur.list[cur.list.length - 1] : null
+  };
 }
 
 function pickLast(groups) {
@@ -972,8 +993,11 @@ function pickLast(groups) {
 }
 
 function deltaAt(series, idx, key) {
-  const arr = series.data[key];
-  const cur = arr[idx];
+  return arrDelta(series.data[key], idx);
+}
+
+function arrDelta(arr, idx) {
+  const cur = arr ? arr[idx] : null;
   if (cur === null || cur === undefined) return null;
   for (let j = idx - 1; j >= 0; j--) {
     if (arr[j] !== null && arr[j] !== undefined) {
@@ -1006,8 +1030,12 @@ function renderLineChart() {
     const yestItem = `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${shortDate(series.yestKey)}</span>`;
     legendEl.innerHTML = todayItems + "　" + yestItem;
   } else {
+    // 上周：颜色参考日榜「昨日」的浅色系列
+    const yestColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
+    const lwLabel = series.lastWeekKey ? shortDate(series.lastWeekKey) : "上周";
     legendEl.innerHTML =
-      LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("");
+      LINE_FIELDS.map(f => `<span class="item"><span class="dot" style="background:${f.color}"></span>${f.label}</span>`).join("")
+      + "　" + `<span class="item"><span class="dot" style="background:${yestColors[0]}"></span>${lwLabel}</span>`;
   }
 
   const titleEl = document.getElementById("lineTitle");
@@ -1061,6 +1089,22 @@ function renderLineChart() {
       lineStyle: { width: 2, color: f.color },
       emphasis: { focus: "series" }
     }));
+    // 上周：虚线细线，颜色参考日榜「昨日」
+    const lwColors = ["#ff9dce", "#d6befe", "#ffcaa5", "#91eeb8"];
+    LINE_FIELDS.forEach((f, fi) => {
+      seriesOpt.push({
+        name: f.label + "（上周）",
+        type: "line",
+        data: series.prevWeek[f.key],
+        smooth: false,
+        symbol: "circle",
+        symbolSize: 2,
+        connectNulls: false,
+        itemStyle: { color: lwColors[fi] },
+        lineStyle: { width: 1, color: lwColors[fi], type: [3, 2] },
+        emphasis: { focus: "series" }
+      });
+    });
   }
 
   let min = Infinity, max = -Infinity;
@@ -1072,6 +1116,7 @@ function renderLineChart() {
   });
   Object.values(series.data).forEach(scan);
   if (series.prevData) Object.values(series.prevData).forEach(scan);
+  if (series.prevWeek) Object.values(series.prevWeek).forEach(scan);
 
   let yMin, yMax;
   if (!isFinite(min) || !isFinite(max)) {
@@ -1096,15 +1141,19 @@ function renderLineChart() {
         let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
 
         if (lineTab !== "daily") {
-          // 周榜：保持原逻辑（按值排序）
+          // 周榜：保持原逻辑（按值排序），上周系列用上周数据自身计算涨幅
           const sorted = params.filter(p => p.value !== null && p.value !== undefined).sort((a, b) => b.value - a.value);
           if (!sorted.length) {
             html += `<div style="color:#999;">无数据</div>`;
             return html;
           }
+          const isLastWeek = n => n.endsWith("（上周）");
+          const baseLabel = n => n.replace("（上周）", "");
           sorted.forEach(p => {
-            const field = LINE_FIELDS.find(f => f.label === p.seriesName);
-            const d = field ? deltaAt(series, i, field.key) : null;
+            const field = LINE_FIELDS.find(f => f.label === baseLabel(p.seriesName));
+            const arr = !field ? null
+              : (isLastWeek(p.seriesName) ? series.prevWeek[field.key] : series.data[field.key]);
+            const d = field ? arrDelta(arr, i) : null;
             let deltaText = "-", deltaColor = "#999";
             if (d !== null && !isNaN(d)) {
               deltaText = (d > 0 ? "+" : "") + d.toFixed(2);
@@ -1571,7 +1620,10 @@ document.querySelectorAll('.range-tabs[data-chart="lineRange"] .range-btn').forE
   });
 });
 let dimsTab = "综合得分";
+let dimsWeekOffset = 0;
 function renderDimsTable() {
+  const titleEl = document.getElementById("dimsTableTitle");
+  if (titleEl) titleEl.textContent = `由你榜分项 · 日榜${dimsWeekOffset === 0 ? "" : "（上周）"}`;
   const theadRow = document.querySelector("#dims-table thead tr");
   const tbody = document.querySelector("#dims-table tbody");
   if (!theadRow || !tbody) return;
@@ -1581,7 +1633,7 @@ function renderDimsTable() {
   const monday = new Date(now);
   const day = monday.getDay();
   const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
+  monday.setDate(monday.getDate() + diff + dimsWeekOffset * 7);
   monday.setHours(0, 0, 0, 0);
   const days = [];
   for (let i = 0; i < 7; i++) {
@@ -1674,6 +1726,15 @@ document.querySelectorAll('#modeTabs .mode-btn').forEach(btn => {
     this.classList.add("active");
     tableMode = this.dataset.mode;
     renderTable();
+  });
+});
+
+document.querySelectorAll('#dimsWeekTabs .mode-btn').forEach(btn => {
+  btn.addEventListener("click", function () {
+    this.parentNode.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    dimsWeekOffset = parseInt(this.dataset.week, 10) || 0;
+    renderDimsTable();
   });
 });
 
