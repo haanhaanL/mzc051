@@ -1178,11 +1178,12 @@ function renderLineChart() {
     tooltip: {
       trigger: "axis",
       confine: true,
+      padding: [6, 0, 4, 0],
       formatter: function (params) {
         if (!params.length) return "";
         const i = params[0].dataIndex;
         const label = series.labels[i];
-        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">${label}</div>`;
+        let html = `<div style="font-weight:bold;margin-bottom:6px;font-size:12px;padding:0 10px;">${label}</div>`;
 
         // 统一布局：日榜=各历史日/今日，周榜=上周/本周（日期区间标签），每行“值 / 涨幅”
         const dayCols = lineTab === "daily"
@@ -1210,20 +1211,27 @@ function renderLineChart() {
           };
         };
 
-        // 依据图表实际宽度自适应，小屏下不截断
+        // 依据图表实际宽度自适应：悬浮块与图表同宽，左右留白一致
         const cw = chartLine.getWidth();
         const n = LINE_FIELDS.length;
         const dateW = lineTab === "daily" ? (cw < 420 ? 32 : cw < 640 ? 44 : 52) : (cw < 420 ? 50 : cw < 640 ? 62 : 78);
-        const avail = Math.max(120, cw - dateW - 14 - (n - 1) * 4);
-        const metW = Math.max(50, Math.min(92, Math.floor(avail / n)));
-        const gapW = avail >= n * (metW + 14) ? 14 : 4;
+        const padX = 10, mrGap = 4;
+        const blockW = Math.max(220, Math.floor(cw - 2 * padX));
+        const inner = blockW - 2 * padX - dateW - mrGap;
+        let metW = Math.floor((inner - (n - 1) * 4) / n);
+        let gapW = 4;
+        if (metW > 92) {
+          metW = 92;
+          gapW = Math.min(40, Math.floor((inner - n * metW) / (n - 1)));
+        }
+        metW = Math.max(44, metW);
         const fontSize = cw < 480 ? 9 : 12;
         const headSize = cw < 480 ? 8 : 11;
         const dotSize = cw < 480 ? 4 : 7;
-        const minW = dateW + 4 + (n - 1) * gapW + n * (metW + 8);
+        const rowStyle = `display:flex;align-items:center;box-sizing:border-box;width:${blockW}px;padding:0 ${padX}px;`;
 
         // 表头：指标名称（带彩色圆点），日期与总分间距小，维度列间距大
-        html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:16px;font-size:${headSize}px;">`
+        html += `<div style="${rowStyle}line-height:16px;font-size:${headSize}px;">`
           + `<span style="width:${dateW}px;color:#bbb;margin-right:4px;">日期</span>`
           + `<span style="width:${metW}px;text-align:right;white-space:nowrap;">`
           + `<span style="display:inline-block;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${LINE_FIELDS[0].color};margin-right:2px;"></span>`
@@ -1253,7 +1261,7 @@ function renderLineChart() {
               + `${has ? v : "-"} / `
               + `<span style="color:${dColor};">${fd.text}</span></span>`;
           }).join("");
-          html += `<div style="display:flex;align-items:center;min-width:${minW}px;line-height:17px;">`
+          html += `<div style="${rowStyle}line-height:17px;">`
             + `<span style="width:${dateW}px;margin-right:4px;color:${isToday ? "#ea3690" : "#888"};font-weight:${isToday ? "bold" : "normal"};font-size:${headSize}px;">`
             + `${col.label}</span>`
             + cells
