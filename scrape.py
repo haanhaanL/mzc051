@@ -125,14 +125,20 @@ def save(path, row):
     now = datetime.now(BJ)
     is_early_daily = (
         is_daily
-        and (now.hour, now.minute) >= (0, 26)
-        and (now.hour, now.minute) <= (5, 56)
+        and (now.hour, now.minute) >= (0, 20)
+        and (now.hour, now.minute) <= (6, 0)
+    )
+
+    is_monday_early_weekly = (
+        not is_daily
+        and now.weekday() == 0
+        and (now.hour, now.minute) >= (0, 20)
+        and (now.hour, now.minute) <= (0, 30)
     )
 
     score_change = (row.get("涨幅") or "").strip()
-    if is_early_daily:
-        if not score_change:
-            score_change = "0.00"
+    if is_early_daily or is_monday_early_weekly:
+        score_change = "-"
     else:
         if not score_change and last:
             score_change = calc_delta(row["综合得分"], last.get("综合得分"))
@@ -143,11 +149,17 @@ def save(path, row):
     for d in DIMS:
         if is_daily_0606:
             dim_changes[d] = "-"
+        elif is_early_daily:
+            dim_changes[d] = "-"
+        elif is_monday_early_weekly:
+            dim_changes[d] = "-"
         else:
             dim_changes[d] = calc_delta(row[d], last.get(d)) if last else ""
 
     raw_change = ""
-    if not is_daily and last:
+    if is_monday_early_weekly:
+        raw_change = "-"
+    elif not is_daily and last:
         raw_change = _delta_keep_places(
             row.get("综合得分原值", ""), last.get("综合得分原值")
         )
